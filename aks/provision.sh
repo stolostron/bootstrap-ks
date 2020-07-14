@@ -102,21 +102,24 @@ printf "${CLEAR}"
 #----EXTRACTING KUBECONFIG----#
 printf "${BLUE}Getting Kubeconfig for cluster.${CLEAR}\n"
 printf "${YELLOW}"
-az aks get-credentials --name ${AKS_CLUSTER_NAME} --resource-group ${RESOURCE_GROUP_NAME} -f ./${RESOURCE_NAME}.kubeconfig
+az aks get-credentials --name ${AKS_CLUSTER_NAME} --resource-group ${RESOURCE_GROUP_NAME} -f $(pwd)/${AKS_CLUSTER_NAME}.kubeconfig
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to get credentials for AKS cluster ${AKS_CLUSTER_NAME}, complaining and continuing${CLEAR}\n"
     exit 1
 fi
+printf "You can find your kubeconfig file for this cluster in $(pwd)/${AKS_CLUSTER_NAME}.kubeconfig.\n"
 printf "${CLEAR}"
 
 
 #-----DUMP STATE FILE----#
-cat > ./${RESOURCE_NAME}.json <<EOF
+cat > ./${AKS_CLUSTER_NAME}.json <<EOF
 {
     "RESOURCE_GROUP_NAME": "${RESOURCE_GROUP_NAME}",
     "CLUSTER_NAME": "${AKS_CLUSTER_NAME}",
     "RESOURCE_NAME": "${RESOURCE_NAME}",
     "REGION": "${AZURE_REGION}",
-    "SUBSCRIPTION": "${SUBSCRIPTION}"
+    "SUBSCRIPTION": "${SUBSCRIPTION}",
+    "PLATFORM": "AZURE"
 }
 EOF
+printf "${GREEN}AKS cluster provision successful.  Cluster named ${AKS_CLUSTER_NAME} created.  State file saved for cleanup in $(pwd)/${AKS_CLUSTER_NAME}.json"
