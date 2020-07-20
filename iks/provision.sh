@@ -7,6 +7,9 @@ RED='\e[31m'
 YELLOW='\e[33m'
 CLEAR='\e[39m'
 
+# Handle MacOS being incapable of tr, grep, and others
+export LC_ALL=C
+
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 5 ; echo '')
@@ -35,6 +38,10 @@ if [ -z "$IBMCLOUD_APIKEY" ]; then
     missing=1
 fi
 
+if [ "$missing" -ne 0 ]; then
+    exit $missing
+fi
+
 if [ ! -z "$CLUSTER_NAME" ]; then
     RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
@@ -42,8 +49,11 @@ else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
 
-if [ "$missing" -ne 0 ]; then
-    exit $missing
+
+#----VERIFY IBMCLOUD CLI----#
+if [ -z "$(which ibmcloud)" ]; then
+    printf "${RED}Could not find the ibmcloud cli, exiting.  Try running ./install.sh.\n"
+    exit 1
 fi
 
 
