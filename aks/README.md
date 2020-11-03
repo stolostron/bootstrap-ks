@@ -10,11 +10,13 @@ This module can be used to install dependencies for AKS provisioning (the `az` c
 
 ```
 export AZURE_USER=<your-azure-username>
-export AZURE_PASSWORD=<your-azure-password>
+export AZURE_PASS=<your-azure-password>
 
 # Optional
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
 # if CLUSTER_NAME is not specified, we will use the first 8 characters of the system's username
+
+export AZURE_REGION=<region>  # defaults to eastus
 ```
 
 2. run `./provision.sh`
