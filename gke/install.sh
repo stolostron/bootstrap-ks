@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x
 # Color codes for bash output
 BLUE='\e[36m'
 GREEN='\e[32m'
@@ -20,7 +20,7 @@ if [[ "$OS" == "darwin" ]]; then
     fi
     curl -X GET --output google-cloud-sdk-301.0.0-darwin-x86_64.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-301.0.0-darwin-x86_64.tar.gz
     tar -xf google-cloud-sdk-301.0.0-darwin-x86_64.tar.gz
-    ./google-cloud-sdk/install.sh -q --rc-path=~/.bash_profile --path-update=true
+    ./google-cloud-sdk/install.sh -q --rc-path=~/.bash_profile --path-update=true --usage-reporting=false
     source ~/.bash_profile
     printf "${GREEN}gcloud cli installed with the following versions:\n$(gcloud --version)${CLEAR}\n"
 else
