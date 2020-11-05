@@ -55,7 +55,8 @@ fi
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
 printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
-gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
+#gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
+gcloud auth activate-service-account --key-file $GCLOUD_CREDS_FILE
 if [ "$?" -ne 0 ]; then
     printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1
