@@ -28,16 +28,6 @@ EKS_NODE_COUNT=${EKS_NODE_COUNT:-"3"}
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
 
-#if [ -z "$GCLOUD_CREDS_FILE" ]; then
-#    printf "${RED}GCLOUD_CREDS_FILE env var not set. flagging for exit.${CLEAR}\n"
-#    missing=1
-#fi
-#
-#if [ -z "$GCLOUD_PROJECT_ID" ]; then
-#    printf "${RED}GCLOUD_PROJECT_ID env var not set. flagging for exit.${CLEAR}\n"
-#    missing=1
-#fi
-
 if [ "$missing" -ne 0 ]; then
     exit $missing
 fi
@@ -57,17 +47,6 @@ if [ -z "$(which eksctl)" ]; then
 fi
 
 
-##----LOG IN----#
-## Log in and optionally choose a specific subscription
-#printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
-#gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
-#if [ "$?" -ne 0 ]; then
-#    printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
-#    exit 1
-#fi
-
-#printf "${BLUE}Setting the gcloud cli's project id to ${GCLOUD_PROJECT_ID}.${CLEAR}\n"
-#gcloud config set project ${GCLOUD_PROJECT_ID}
 
 
 #----CREATE EKS CLUSTER----#
@@ -83,15 +62,6 @@ printf "${GREEN}Successfully provisioned EKS cluster ${EKS_CLUSTER_NAME}.${CLEAR
 
 
 #----EXTRACTING KUBECONFIG----#
-printf "${BLUE}Getting Kubeconfig for the cluster named ${EKS_CLUSTER_NAME}.${CLEAR}\n"
-printf "${YELLOW}"
-export KUBECONFIG=$PWD/${EKS_CLUSTER_NAME}.kubeconfig
-#gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --region="${GCLOUD_REGION}"
-#if [ "$?" -ne 0 ]; then
-#    printf "${RED}Failed to get credentials for GKE cluster ${GKE_CLUSTER_NAME}, complaining and continuing${CLEAR}\n"
-#    exit 1
-#fi
-unset KUBECONFIG
 printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.\n${CLEAR}"
 printf "${CLEAR}"
 

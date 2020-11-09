@@ -9,13 +9,13 @@ This module can be used to install dependencies for Amazon Elastic Kubernetes Se
 1. Set the following env vars before provisioning:
 
 ```
-export GCLOUD_CREDS_FILE=<your-gcloud-json-key-file, usually ~/.gcp/osServiceAccount.json> (this will default to ~/.gcp/osServiceAccount.json so its not technically required)
-export GCLOUD_PROJECT_ID=<your-gcloud-project-id>
-
 # Optional
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
 # if CLUSTER_NAME is not specified, we will use the first 8 characters of the system's username
-export GCLOUD_NODE_COUNT=<desired node count>
+
+export EKS_REGION=<desired region. Default is us-east-1 >
+export EKS_NODE_COUNT=<desired node cound.  Default is 3 >
+
 ```
 
 2. run `./provision.sh`

@@ -23,15 +23,6 @@ REGION=$(cat $1 | jq -r '.REGION')
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
 
-#if [ -z "$GCLOUD_CREDS_FILE" ]; then
-#    printf "${RED}GCLOUD_CREDS_FILE env var not set. flagging for exit.${CLEAR}\n"
-#    missing=1
-#fi
-#
-#if [ -z "$GCLOUD_PROJECT_ID" ]; then
-#    printf "${RED}GCLOUD_PROJECT_ID env var not set. flagging for exit.${CLEAR}\n"
-#    missing=1
-#fi
 
 if [ "$missing" -ne 0 ]; then
     exit $missing
@@ -51,18 +42,6 @@ if [ -z "$(which eksctl)" ]; then
     exit 1
 fi
 
-
-##----LOG IN----#
-## Log in and optionally choose a specific subscription
-#printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
-#gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
-#if [ "$?" -ne 0 ]; then
-#    printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
-#    exit 1
-#fi
-#
-#printf "${BLUE}Setting the gcloud cli's project id to ${GCLOUD_PROJECT_ID}.${CLEAR}\n"
-#gcloud config set project ${GCLOUD_PROJECT_ID}
 
 
 #----DELETE EKS CLUSTER----#
