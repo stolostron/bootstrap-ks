@@ -23,15 +23,15 @@ REGION=$(cat $1 | jq -r '.REGION')
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
 
-if [ -z "$GCLOUD_CREDS_FILE" ]; then
-    printf "${RED}GCLOUD_CREDS_FILE env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
-
-if [ -z "$GCLOUD_PROJECT_ID" ]; then
-    printf "${RED}GCLOUD_PROJECT_ID env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
+#if [ -z "$GCLOUD_CREDS_FILE" ]; then
+#    printf "${RED}GCLOUD_CREDS_FILE env var not set. flagging for exit.${CLEAR}\n"
+#    missing=1
+#fi
+#
+#if [ -z "$GCLOUD_PROJECT_ID" ]; then
+#    printf "${RED}GCLOUD_PROJECT_ID env var not set. flagging for exit.${CLEAR}\n"
+#    missing=1
+#fi
 
 if [ "$missing" -ne 0 ]; then
     exit $missing
@@ -45,34 +45,34 @@ else
 fi
 
 
-#----VERIFY GCLOUD CLI----#
-if [ -z "$(which gcloud)" ]; then
-    printf "${RED}Could not find the gcloud cli, exiting.  Try running ./install.sh.${CLEAR}\n"
+#----VERIFY EKSCTL CLI----#
+if [ -z "$(which eksctl)" ]; then
+    printf "${RED}Could not find the eksctl cli, exiting.  Try running ./install.sh.${CLEAR}\n"
     exit 1
 fi
 
 
-#----LOG IN----#
-# Log in and optionally choose a specific subscription
-printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
-gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
-if [ "$?" -ne 0 ]; then
-    printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
-    exit 1
-fi
+##----LOG IN----#
+## Log in and optionally choose a specific subscription
+#printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
+#gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
+#if [ "$?" -ne 0 ]; then
+#    printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
+#    exit 1
+#fi
+#
+#printf "${BLUE}Setting the gcloud cli's project id to ${GCLOUD_PROJECT_ID}.${CLEAR}\n"
+#gcloud config set project ${GCLOUD_PROJECT_ID}
 
-printf "${BLUE}Setting the gcloud cli's project id to ${GCLOUD_PROJECT_ID}.${CLEAR}\n"
-gcloud config set project ${GCLOUD_PROJECT_ID}
 
-
-#----DELETE GKE CLUSTER----#
-printf "${BLUE}Deleting the GKE cluster named ${CLUSTER_NAME}.${CLEAR}\n"
+#----DELETE EKS CLUSTER----#
+printf "${BLUE}Deleting the EKS cluster named ${CLUSTER_NAME}.${CLEAR}\n"
 
 printf "${YELLOW}"
-echo "y" | gcloud container clusters delete ${CLUSTER_NAME} --region=${REGION}
+echo "y" | eksctl delete cluster --name ${CLUSTER_NAME} --region=${REGION}
 if [ "$?" -ne 0 ]; then
-    printf "${RED}Failed to delete GKE cluster ${CLUSTER_NAME}, exiting${CLEAR}\n"
+    printf "${RED}Failed to delete EKS cluster ${CLUSTER_NAME}, exiting${CLEAR}\n"
     exit 1
 fi
 printf "${CLEAR}"
-printf "${GREEN}Successfully cleaned up the GKE cluster named ${CLUSTER_NAME}.${CLEAR}\n"
+printf "${GREEN}Successfully cleaned up the EKS cluster named ${CLUSTER_NAME}.${CLEAR}\n"
