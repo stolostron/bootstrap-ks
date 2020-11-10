@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+
 # Color codes for bash output
 BLUE='\e[36m'
 GREEN='\e[32m'

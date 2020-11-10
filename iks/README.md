@@ -11,6 +11,7 @@ provisioning (the `ibmcloud` cli), provision an IKS/ROKS cluster, and destroy an
 
 ```
 export IBMCLOUD_APIKEY=<your-ibmcloud-apikey>
+# See https://cloud.ibm.com/iam/apikeys
 
 # Optional
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
