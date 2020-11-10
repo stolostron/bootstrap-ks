@@ -1,6 +1,7 @@
 ## IKS
 
-This module can be used to install dependencies for IKS provisioning (the `ibmcloud` cli), provision an IKS/ROKS cluster, and destroy an IKS/ROKS cluster provisioned using this utility.  
+This module can be used to install dependencies for IBM Cloud Kubernetes Service (IKS) and IBM Red Hat Openshift Kubernetes Service (ROKS)
+provisioning (the `ibmcloud` cli), provision an IKS/ROKS cluster, and destroy an IKS/ROKS cluster provisioned using this utility.  
 
 ### Getting Started
 *Optionally* run install.sh, this only works on MacOS and Fedora-based Linux instances.  
