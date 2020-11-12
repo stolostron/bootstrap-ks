@@ -53,7 +53,7 @@ fi
 EKS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an EKS cluster named ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-eksctl create cluster --name ${EKS_CLUSTER_NAME} --nodes ${EKS_NODE_COUNT} --region "${EKS_REGION}"
+eksctl create cluster --name ${EKS_CLUSTER_NAME} --nodes ${EKS_NODE_COUNT} --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig"
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision EKS cluster. See error above. Exiting${CLEAR}\n"
     exit 1
@@ -62,7 +62,7 @@ printf "${GREEN}Successfully provisioned EKS cluster ${EKS_CLUSTER_NAME}.${CLEAR
 
 
 #----EXTRACTING KUBECONFIG----#
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.\n${CLEAR}"
+printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
 printf "${CLEAR}"
 
 
