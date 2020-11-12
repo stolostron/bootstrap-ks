@@ -12,7 +12,7 @@ export LC_ALL=C
 
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
-RANDOM_IDENTIFIER=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 5 ; echo '')
+RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc A-Za-z0-9 | head -c 5 ; echo '')
 SHORTNAME=$(echo $USER | head -c 8)
 
 # Generate a default resource name

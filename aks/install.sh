@@ -9,7 +9,15 @@ if [[ "$OS" == "darwin" ]]; then
         exit 1
     fi
     brew update && brew install azure-cli
+
+    if [ -z "$(which jq)" ]; then
+        brew install jq
+    fi
 else
+    if [ -z "$(which jq)" ]; then
+        sudo yum install -y jq
+    fi
+
     sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
     sudo sh -c 'echo -e "[azure-cli]
 name=Azure CLI

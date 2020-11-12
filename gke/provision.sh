@@ -12,7 +12,7 @@ export LC_ALL=C
 
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
-RANDOM_IDENTIFIER=$(head /dev/urandom | tr -dc a-z0-9 | head -c 5 ; echo '')
+RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 5 ; echo '')
 SHORTNAME=$(echo $USER | head -c 8)
 
 # Generate a default resource name
@@ -61,7 +61,8 @@ fi
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
 printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
-gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
+#gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
+gcloud auth activate-service-account --key-file $GCLOUD_CREDS_FILE
 if [ "$?" -ne 0 ]; then
     printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1
