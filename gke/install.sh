@@ -10,6 +10,10 @@ CLEAR='\e[39m'
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
 if [[ "$OS" == "darwin" ]]; then
+    if [ -z "$(which jq)" ]; then
+        brew install jq
+    fi
+
     if [ -z "$(which python3)" ]; then
         brew install python3
     fi
@@ -24,6 +28,10 @@ if [[ "$OS" == "darwin" ]]; then
     source ~/.bash_profile
     printf "${GREEN}gcloud cli installed with the following versions:\n$(gcloud --version)${CLEAR}\n"
 else
+    if [ -z "$(which jq)" ]; then
+        sudo yum install -y jq
+    fi
+
     # Update YUM with Cloud SDK repo information:
     sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
 [google-cloud-sdk]

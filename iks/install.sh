@@ -1,5 +1,18 @@
 #!/bin/bash
 
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+
+if [[ "$OS" == "darwin" ]]; then
+    if [ -z "$(which jq)" ]; then
+        brew install jq
+    fi
+else
+    if [ -z "$(which jq)" ]; then
+        sudo yum install -y jq
+    fi
+fi
+
+
 curl -sL https://ibm.biz/idt-installer | bash
 
 if [ $? -ne 0 ]; then
