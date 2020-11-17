@@ -1,6 +1,6 @@
-## AKS
+## Azure Kubernetes Service (AKS)
 
-This module can be used to install dependencies for AKS provisioning (the `az` cli), provision an AKS cluster, and destroy an aks cluster provisioned using this utility.  
+This module can be used to install dependencies for Azure Kubernetes Service (AKS) provisioning (the `az` cli), provision an AKS cluster, and destroy an aks cluster provisioned using this utility.  
 
 ### Getting Started
 *Optionally* run install.sh, this only works on MacOS and Fedora-based Linux instances.  

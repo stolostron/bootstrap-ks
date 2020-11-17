@@ -1,4 +1,4 @@
-## EKS
+## Amazon Elastic Kubernetes Service (EKS)
 
 This module can be used to install dependencies for Amazon Elastic Kubernetes Service (EKS) provisioning (the `gcloud` cli), provision a EKS cluster, and destroy an EKS cluster provisioned using this utility.  
 
