@@ -9,6 +9,7 @@ CLEAR='\e[39m'
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
+# Mac
 if [[ "$OS" == "darwin" ]]; then
     if [ -z "$(which jq)" ]; then
         brew install jq
@@ -27,9 +28,14 @@ if [[ "$OS" == "darwin" ]]; then
     ./google-cloud-sdk/install.sh -q --rc-path=~/.bash_profile --path-update=true --usage-reporting=false
     source ~/.bash_profile
     printf "${GREEN}gcloud cli installed with the following versions:\n$(gcloud --version)${CLEAR}\n"
-else
+elif [[ "$OS" == "linux" ]]; then
+  if [ -z "$JENKINS_HOME" ]; then
+    # RHEL Linux
     if [ -z "$(which jq)" ]; then
         sudo yum install -y jq
+    fi
+    if [ -z "$(which python)" ]; then
+        sudo yum install -y python2
     fi
 
     # Update YUM with Cloud SDK repo information:
@@ -45,5 +51,26 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
 EOM
 
     # Install the Cloud SDK
-    sudo yum install google-cloud-sdk
+    sudo yum install -y google-cloud-sdk
+
+    gcloud version
+
+  else
+    # Install for Jenkins alpine
+    apk add python
+
+    export GKE_DIRECTORY="$PWD/GoogleCloudSDK/google-cloud-sdk/bin"
+    if [ ! -d "$GKE_DIRECTORY" ]; then
+      mkdir GoogleCloudSDK
+    	wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip -O google-cloud-sdk.zip
+    	unzip -o google-cloud-sdk.zip -d ./GoogleCloudSDK/
+    	./GoogleCloudSDK/google-cloud-sdk/install.sh
+    fi
+    export PATH=${GKE_DIRECTORY}:$PATH
+
+    gcloud version
+  fi
+else
+  echo "Unsupported OS"
+  exit 1
 fi

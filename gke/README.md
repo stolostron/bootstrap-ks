@@ -1,6 +1,6 @@
-## GKE
+## Google Kubernetes Engine (GKE)
 
-This module can be used to install dependencies for GKE provisioning (the `gcloud` cli), provision a GKE cluster, and destroy an GKE cluster provisioned using this utility.  
+This module can be used to install dependencies for Google Kubernetes Engine (GKE) provisioning (the `gcloud` cli), provision a GKE cluster, and destroy an GKE cluster provisioned using this utility.  
 
 ### Getting Started
 *Optionally* run install.sh, this only works on MacOS and Fedora-based Linux instances.  
