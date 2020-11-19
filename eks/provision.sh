@@ -22,6 +22,8 @@ NAME_SUFFIX="eks"
 # Default to us-east-1
 EKS_REGION=${EKS_REGION:-"us-east-1"}
 EKS_NODE_COUNT=${EKS_NODE_COUNT:-"3"}
+# Optional - defaults is to auto-select
+EKS_ZONES=${EKS_ZONES:-""}
 
 
 #----VALIDATE ENV VARS----#
@@ -53,7 +55,13 @@ fi
 EKS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an EKS cluster named ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-eksctl create cluster --name ${EKS_CLUSTER_NAME} --nodes ${EKS_NODE_COUNT} --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig"
+
+OPTIONAL_PARAMS=""
+if [ ! -z "$EKS_ZONES" ]; then
+  OPTIONAL_PARAMS=$OPTIONAL_PARAMS+" --zones \"${EKS_ZONES}\""
+fi
+
+eksctl create cluster --name "${EKS_CLUSTER_NAME}" --nodes "${EKS_NODE_COUNT}" --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig" ${OPTIONAL_PARAMS}
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision EKS cluster. See error above. Exiting${CLEAR}\n"
     exit 1
