@@ -35,7 +35,7 @@ elif [[ "$OS" == "linux" ]]; then
         sudo yum install -y jq
     fi
     if [ -z "$(which python)" ]; then
-        sudo yum install -y python
+        sudo yum install -y python2
     fi
 
     # Update YUM with Cloud SDK repo information:
@@ -51,7 +51,7 @@ gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
 EOM
 
     # Install the Cloud SDK
-    sudo yum install google-cloud-sdk
+    sudo yum install -y google-cloud-sdk
 
     gcloud version
 
