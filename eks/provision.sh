@@ -58,7 +58,7 @@ printf "${YELLOW}"
 
 OPTIONAL_PARAMS=""
 if [ ! -z "$EKS_ZONES" ]; then
-  OPTIONAL_PARAMS=$OPTIONAL_PARAMS+" --zones \"${EKS_ZONES}\""
+  OPTIONAL_PARAMS=$"${OPTIONAL_PARAMS} --zones ${EKS_ZONES} "
 fi
 
 eksctl create cluster --name "${EKS_CLUSTER_NAME}" --nodes "${EKS_NODE_COUNT}" --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig" ${OPTIONAL_PARAMS}
