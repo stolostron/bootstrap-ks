@@ -47,7 +47,7 @@ fi
 
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
-az login -u $AZURE_USER -p $AZURE_PASS &> /dev/null
+az login -u "$AZURE_USER" -p "$AZURE_PASS" &> /dev/null
 if [ "$?" -ne 0 ]; then
     printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1
