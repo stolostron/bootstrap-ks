@@ -35,7 +35,7 @@ fi
 
 ibmcloud version
 curl --progress-bar -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-ibmcloud plugin install container-service
+ibmcloud plugin install container-service -f
 if [ $? -ne 0 ]; then
     echo "IBM Cloud CLI kubernetes plugin installation failed, exiting with a failure"
     exit 1;
