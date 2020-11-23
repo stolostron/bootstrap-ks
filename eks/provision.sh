@@ -13,6 +13,14 @@ export LC_ALL=C
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 5 ; echo '')
+# Ensure USER has a value
+if [ -z "$JENKINS_HOME" ]; then
+  USER=${USER:-"unknown"}
+else
+  USER=${USER:-"jenkins"}
+fi
+
+
 SHORTNAME=$(echo $USER | head -c 8)
 
 # Generate a default resource name

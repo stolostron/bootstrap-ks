@@ -63,10 +63,11 @@ EOM
     if [ ! -d "$GKE_DIRECTORY" ]; then
       mkdir GoogleCloudSDK
     	wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip -O google-cloud-sdk.zip
-    	unzip -o google-cloud-sdk.zip -d ./GoogleCloudSDK/
+    	unzip -o google-cloud-sdk.zip -d ./GoogleCloudSDK/ -q
     	./GoogleCloudSDK/google-cloud-sdk/install.sh
     fi
-    export PATH=${GKE_DIRECTORY}:$PATH
+
+    ln -s ${GKE_DIRECTORY}/gcloud /usr/local/bin/gcloud
 
     gcloud version
   fi
