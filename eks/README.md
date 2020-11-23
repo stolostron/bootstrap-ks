@@ -20,6 +20,9 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 
 export EKS_REGION=<desired region. Default is us-east-1 >
 export EKS_NODE_COUNT=<desired node cound.  Default is 3 >
+# Optional - defaults is to auto-select
+export EKS_ZONES=<comma separated list of availability zones.  Default is to auto-select >
+
 
 ```
 

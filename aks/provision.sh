@@ -10,6 +10,13 @@ CLEAR='\e[39m'
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc A-Za-z0-9 | head -c 5 ; echo '')
+# Ensure USER has a value
+if [ -z "$JENKINS_HOME" ]; then
+  USER=${USER:-"unknown"}
+else
+  USER=${USER:-"jenkins"}
+fi
+
 SHORTNAME=$(echo $USER | head -c 8)
 
 # Generate a default resource name
@@ -47,7 +54,7 @@ fi
 
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
-az login -u $AZURE_USER -p $AZURE_PASS &> /dev/null
+az login -u "$AZURE_USER" -p "$AZURE_PASS" &> /dev/null
 if [ "$?" -ne 0 ]; then
     printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1

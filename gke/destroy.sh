@@ -70,7 +70,7 @@ gcloud config set project ${GCLOUD_PROJECT_ID}
 printf "${BLUE}Deleting the GKE cluster named ${CLUSTER_NAME}.${CLEAR}\n"
 
 printf "${YELLOW}"
-echo "y" | gcloud container clusters delete ${CLUSTER_NAME} --region=${REGION}
+gcloud container clusters delete ${CLUSTER_NAME} --region=${REGION} --quiet
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to delete GKE cluster ${CLUSTER_NAME}, exiting${CLEAR}\n"
     exit 1
