@@ -98,7 +98,7 @@ AKS_CLUSTER_NAME="${RESOURCE_NAME}-aks"
 printf "${BLUE}Creating an AKS cluster named ${AKS_CLUSTER_NAME}.${CLEAR}\n"
 
 printf "${YELLOW}"
-az aks create --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_CLUSTER_NAME}" --location "${AZURE_REGION}" --subscription $SUBSCRIPTION
+az aks create --resource-group "${RESOURCE_GROUP_NAME}" --name "${AKS_CLUSTER_NAME}" --location "${AZURE_REGION}" --subscription $SUBSCRIPTION --generate-ssh-keys
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to create AKS cluster ${AKS_CLUSTER_NAME}, exiting${CLEAR}\n"
     exit 1
