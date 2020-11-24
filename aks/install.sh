@@ -57,4 +57,6 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azu
       pip3 install --upgrade  azure-cli --no-cache-dir
     fi
 else
+    echo "Unsupported OS"
+    exit 1
 fi
