@@ -57,19 +57,21 @@ EOM
 
   else
     # Install for Jenkins alpine
-    apk add python
-
-    export GKE_DIRECTORY="$PWD/GoogleCloudSDK/google-cloud-sdk/bin"
-    if [ ! -d "$GKE_DIRECTORY" ]; then
-      mkdir GoogleCloudSDK
-    	wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip -O google-cloud-sdk.zip
-    	unzip -o google-cloud-sdk.zip -d ./GoogleCloudSDK/ -q
-    	./GoogleCloudSDK/google-cloud-sdk/install.sh
+    if [ -z "$(which python)" ]; then
+      apk add python
     fi
 
-    ln -s ${GKE_DIRECTORY}/gcloud /usr/local/bin/gcloud
-
-    gcloud version
+    if [ -z "$(which gcloud)" ]; then
+      export GKE_DIRECTORY="$PWD/GoogleCloudSDK/google-cloud-sdk/bin"
+      if [ ! -d "$GKE_DIRECTORY" ]; then
+        mkdir GoogleCloudSDK
+    	  wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.zip -O google-cloud-sdk.zip
+    	  unzip -o google-cloud-sdk.zip -d ./GoogleCloudSDK/ -q
+    	  ./GoogleCloudSDK/google-cloud-sdk/install.sh --usage-reporting=false
+      fi
+      ln -s ${GKE_DIRECTORY}/gcloud /usr/local/bin/gcloud
+      gcloud version
+    fi
   fi
 else
   echo "Unsupported OS"
