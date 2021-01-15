@@ -77,9 +77,74 @@ fi
 printf "${GREEN}Successfully provisioned EKS cluster ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 
 
-#----EXTRACTING KUBECONFIG----#
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
-printf "${CLEAR}"
+#----Make KUBECONFIG that is useable from anywhere ----#
+export KUBECONFIG_SAVED=$KUBECONFIG
+export KUBECONFIG=$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig
+
+# Check for which base64 command we have available so we can use the right option
+echo | base64 -w 0 > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+  # GNU coreutils base64, '-w' supported
+  BASE64_OPTION=" -w 0"
+else
+  # Openssl base64, no wrapping by default
+  BASE64_OPTION=" "
+fi
+
+echo | kubectl apply -f - &> /dev/null <<EOF
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cluster-admin
+  namespace: kube-system
+EOF
+
+echo | kubectl apply -f - &> /dev/null <<EOF
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-system-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: cluster-admin
+  namespace: kube-system
+EOF
+
+sleep 1
+
+cat > "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable" <<EOF
+apiVersion: v1
+clusters:
+- cluster:
+    server: $(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
+    insecure-skip-tls-verify: true
+  name: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+contexts:
+- context:
+    cluster: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+    namespace: default
+    user: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+  name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+current-context: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+kind: Config
+preferences: {}
+users:
+- name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+  user:
+    token: $(kubectl get $(kubectl get secret -n kube-system -o name | grep cluster-admin-token | head -n 1) -n kube-system -o jsonpath={.data.token} | base64 --decode ${BASE64_OPTION})
+EOF
+
+# take portable kubeconfig and replace original kubeconfig
+cp $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig
+rm $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable
+
+# Set KUBECONFIG to what it used to be
+export KUBECONFIG=$KUBECONFIG_SAVED
+
 
 
 #-----DUMP STATE FILE----#
@@ -90,6 +155,13 @@ cat > $(pwd)/${EKS_CLUSTER_NAME}.json <<EOF
     "PLATFORM": "EKS"
 }
 EOF
+
+
+#----EXTRACTING KUBECONFIG----#
+printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
+printf "${CLEAR}"
+
+
 
 printf "${GREEN}EKS cluster provision successful.  Cluster named ${EKS_CLUSTER_NAME} created. \n"
 printf "State file saved for cleanup in $(pwd)/${EKS_CLUSTER_NAME}.json${CLEAR}\n"
