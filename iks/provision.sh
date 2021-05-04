@@ -119,7 +119,7 @@ else
     fi
 
     # detect flavor based on regex check for the word "openshift", which is in the name of all openshift versions on iks
-    if [[ "${KUBERNETES_VERSION}" =~ *openshift* ]]; then
+    if [[ "${KUBERNETES_VERSION}" =~ .*"openshift".* ]]; then
         FLAVOR=$ROKS_DEFAULT_FLAVOR
         NAME_SUFFIX="roks"
     else

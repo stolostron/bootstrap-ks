@@ -7,6 +7,9 @@ RED='\e[31m'
 YELLOW='\e[33m'
 CLEAR='\e[39m'
 
+# Handle MacOS being incapable of tr, grep, and others
+export LC_ALL=C
+
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 5 ; echo '')
