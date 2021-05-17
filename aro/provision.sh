@@ -34,6 +34,18 @@ RESOURCE_NAME="$SHORTNAME-$RANDOM_IDENTIFIER"
 # Default to eastus
 AZURE_REGION=${AZURE_REGION:-"eastus"}
 
+# Default Masters to Standard_D8s_v3
+AZURE_MASTER_SIZE=${AZURE_MASTER_SIZE:-"Standard_D8s_v3"}
+
+# Default Workers to Standard_D4s_v3
+AZURE_WORKER_SIZE=${AZURE_WORKER_SIZE:-"Standard_D4s_v3"}
+
+# Default to 3 workers
+AZURE_WORKER_COUNT=${AZURE_WORKER_COUNT:-"3"}
+
+# Default to 100GB disk
+AZURE_WORKER_DISK_SIZE=${AZURE_WORKER_DISK_SIZE:-"128"}
+
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
@@ -79,12 +91,15 @@ fi
 
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
-az login -u "$AZURE_USER" -p "$AZURE_PASS" &> /dev/null
+printf "${YELLOW}"
+az login -u "$AZURE_USER" -p "$AZURE_PASS" > /dev/null
 if [ "$?" -ne 0 ]; then
     printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1
 fi
+printf "${CLEAR}"
 
+printf "${YELLOW}"
 if [ ! -z "$AZURE_SUBSCRIPTION_ID" ]; then
     az account set --subscription $AZURE_SUBSCRIPTION_ID
     if [ "$?" -ne 0 ]; then
@@ -93,6 +108,7 @@ if [ ! -z "$AZURE_SUBSCRIPTION_ID" ]; then
         exit 1
     fi
 fi
+printf "${CLEAR}"
 
 printf "${BLUE}Using subscription:${CLEAR}\n"
 printf "${YELLOW}"
@@ -149,7 +165,7 @@ printf "${CLEAR}"
 printf "${BLUE}Creating a virtual network named ${RESOURCE_NAME}-vnet.${CLEAR}\n"
 printf "${YELLOW}"
 az network vnet create \
-    --location ${AZURE_REGION} \
+    --location "${AZURE_REGION}" \
     --resource-group ${RESOURCE_GROUP_NAME} \
     --name ${RESOURCE_NAME}-vnet \
     --address-prefixes 10.0.0.0/22;
@@ -213,12 +229,16 @@ printf "${CLEAR}"
 printf "${BLUE}Creating the ARO Cluster ${RESOURCE_NAME} in the ${RESOURCE_GROUP_NAME} resource group.${CLEAR}\n"
 printf "${YELLOW}"
 az aro create \
-    --location ${AZURE_REGION} \
+    --location "${AZURE_REGION}" \
     --resource-group $RESOURCE_GROUP_NAME \
     --name ${RESOURCE_NAME} \
     --vnet ${RESOURCE_NAME}-vnet \
     --master-subnet master-subnet \
     --worker-subnet worker-subnet \
+    --master-vm-size "$AZURE_MASTER_SIZE" \
+    --worker-vm-size "$AZURE_WORKER_SIZE" \
+    --worker-count "$AZURE_WORKER_COUNT" \
+    --worker-vm-disk-size-gb "$AZURE_WORKER_DISK_SIZE" \
     --domain=${RESOURCE_NAME}.${AZURE_BASE_DOMAIN} \
     --pull-secret @${OCP_PULL_SECRET_FILE};
 printf "${CLEAR}"
