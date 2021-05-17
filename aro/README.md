@@ -11,6 +11,9 @@ This module can be used to install dependencies for Azure Red Hat OpenShift (ARO
 ```
 export AZURE_USER=<your-azure-username>
 export AZURE_PASS=<your-azure-password>
+export AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME=<name-of-your-base-domain-resource-group-name>
+export AZURE_BASE_DOMAIN=<your-clusters-base-domain>
+export OCP_PULL_SECRET_FILE=<path-to-your-openshift-pull-secret> # Pull secret can be found at https://cloud.redhat.com/openshift/create/local -> "Download pull secret"
 
 # Optional
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
@@ -20,7 +23,7 @@ export AZURE_REGION=<region>  # defaults to eastus
 ```
 
 2. run `./provision.sh`
-3. if successful, you will see a `.json` and `.kubeconfig` file with metadata for your cluster!
+3. if successful, you will see a `.json` and `.cred.json` file with metadata for your cluster!
 
 ### Cleaning up a cluster
 1. run `./destroy.sh <.json file of your cluster metadata>`

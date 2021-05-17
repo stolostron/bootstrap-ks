@@ -149,6 +149,7 @@ printf "${CLEAR}"
 printf "${BLUE}Creating a virtual network named ${RESOURCE_NAME}-vnet.${CLEAR}\n"
 printf "${YELLOW}"
 az network vnet create \
+    --location ${AZURE_REGION} \
     --resource-group ${RESOURCE_GROUP_NAME} \
     --name ${RESOURCE_NAME}-vnet \
     --address-prefixes 10.0.0.0/22;
@@ -212,6 +213,7 @@ printf "${CLEAR}"
 printf "${BLUE}Creating the ARO Cluster ${RESOURCE_NAME} in the ${RESOURCE_GROUP_NAME} resource group.${CLEAR}\n"
 printf "${YELLOW}"
 az aro create \
+    --location ${AZURE_REGION} \
     --resource-group $RESOURCE_GROUP_NAME \
     --name ${RESOURCE_NAME} \
     --vnet ${RESOURCE_NAME}-vnet \
