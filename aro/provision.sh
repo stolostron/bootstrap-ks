@@ -82,11 +82,14 @@ fi
 
 #----GENERATE RESOURCE NAME----#
 if [ ! -z "$CLUSTER_NAME" ]; then
-    RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
+    RESOURCE_NAME="$CLUSTER_NAME"
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
+RESOURCE_GROUP_NAME="${RESOURCE_NAME}-rg"
+STATE_FILE=$PWD/${RESOURCE_NAME}.json
+CREDS_FILE=$PWD/${RESOURCE_NAME}.creds.json
 
 
 #----LOG IN----#
@@ -148,16 +151,21 @@ if [ "$?" -ne 0 ]; then
 fi
 
 
-#----CREATE RESOURCE GROUP----#
-RESOURCE_GROUP_NAME="${RESOURCE_NAME}-rg"
-printf "${BLUE}Creating a resource group named ${RESOURCE_GROUP_NAME}.${CLEAR}\n"
+#----WRITE INITIAL STATE FILE----#
+if [[ ! -f ${STATE_FILE} ]]; then
+    echo "{}" > ${STATE_FILE}
+fi
+jq --arg rg_name "${RESOURCE_GROUP_NAME}" '. + {RESOURCE_GROUP_NAME: $rg_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg region "${REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg subscription "${SUBSCRIPTION}" '. + {SUBSCRIPTION: $subscription}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg platform "${PLATFORM}" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 
+
+#----CREATE RESOURCE GROUP----#
+printf "${BLUE}Creating a resource group named ${RESOURCE_GROUP_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
 az group create --name "${RESOURCE_GROUP_NAME}" --location "$AZURE_REGION" --subscription $SUBSCRIPTION
-if [ "$?" -ne 0 ]; then
-    printf "${RED}Failed to create resource group ${RESOURCE_GROUP_NAME}, exiting${CLEAR}\n"
-    exit 1
-fi
 printf "${CLEAR}"
 
 
@@ -216,6 +224,11 @@ az network dns zone create \
 printf "${CLEAR}"
 
 
+#----WRITE ADDITIONAL STATE INFO----#
+jq --arg bd_rg_name "${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME}" '. + {AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME: $bd_rg_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg bd_name "${AZURE_BASE_DOMAIN}" '. + {AZURE_BASE_DOMAIN: $bd_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+
+
 #----CREATE/MODIFY DNS RECORD SETS----#
 printf "${BLUE}Creating nameserver records in ${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME} for the domain ${RESOURCE_NAME}.az.red-chesterfield.com.${CLEAR}\n"
 printf "${YELLOW}"
@@ -265,21 +278,10 @@ console_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --qu
 
 
 #-----DUMP STATE FILE, CREDS, AND PRINT SUCCESS----#
-cat > ./${RESOURCE_NAME}.json <<EOF
-{
-    "RESOURCE_GROUP_NAME": "${RESOURCE_GROUP_NAME}",
-    "CLUSTER_NAME": "${RESOURCE_NAME}",
-    "REGION": "${AZURE_REGION}",
-    "SUBSCRIPTION": "${SUBSCRIPTION}",
-    "PLATFORM": "ARO",
-    "AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME": "${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME}",
-    "AZURE_BASE_DOMAIN": "${AZURE_BASE_DOMAIN}",
-    "USERNAME": "${username}",
-    "PASSWORD": "${password}",
-    "CONSOLE_URL": "${console_url}"
-}
-EOF
-cat > ./${RESOURCE_NAME}.creds.json <<EOF
+jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+cat > ${CREDS_FILE} <<EOF
 {
     "USERNAME": "${username}",
     "PASSWORD": "${password}",
