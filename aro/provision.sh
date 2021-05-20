@@ -275,6 +275,7 @@ password=$(az aro list-credentials --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_N
 
 #----EXTRACT CONSOLE URL----#
 console_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query "consoleProfile.url" -o tsv)
+api_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query "apiserverProfile.url" -o tsv)
 
 
 #-----DUMP STATE FILE, CREDS, AND PRINT SUCCESS----#
@@ -285,7 +286,8 @@ cat > ${CREDS_FILE} <<EOF
 {
     "USERNAME": "${username}",
     "PASSWORD": "${password}",
-    "CONSOLE_URL": "${console_url}"
+    "CONSOLE_URL": "${console_url}",
+    "API_URL": "${api_url}"
 }
 EOF
 printf "${GREEN}ARO cluster named ${RESOURCE_NAME} provisioned successfully.\n${CLEAR}"
