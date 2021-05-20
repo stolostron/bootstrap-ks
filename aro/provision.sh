@@ -157,9 +157,9 @@ if [[ ! -f ${STATE_FILE} ]]; then
 fi
 jq --arg rg_name "${RESOURCE_GROUP_NAME}" '. + {RESOURCE_GROUP_NAME: $rg_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg region "${REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg region "${AZURE_REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg subscription "${SUBSCRIPTION}" '. + {SUBSCRIPTION: $subscription}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg platform "${PLATFORM}" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg platform "aro" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 
 
 #----CREATE RESOURCE GROUP----#
