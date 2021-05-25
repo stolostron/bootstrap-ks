@@ -258,7 +258,7 @@ printf "${CLEAR}"
 
 
 #----CREATE API AND APPS RECORD SETS----#
-printf "${BLUE}Creating record sets for ingress and api urls for the ${CLEAR}\n"
+printf "${BLUE}Creating record sets for ingress and api urls for the ARO cluster ${RESOURCE_NAME}.${CLEAR}\n"
 api_url=$(az aro show -n ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query '{api:apiserverProfile.ip}' | jq -r '.api')
 ingress_url=$(az aro show -n ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query '{ingress:ingressProfiles[0].ip}' | jq -r '.ingress')
 printf "${YELLOW}"
@@ -268,12 +268,13 @@ printf "${CLEAR}"
 
 
 #----EXRACT USERNAME AND PASS-----#
-printf "${BLUE}Creating record sets for ingress and api urls for the ${CLEAR}\n"
+printf "${BLUE}Extract credentials for the ARO cluster ${RESOURCE_NAME}.${CLEAR}\n"
 username=$(az aro list-credentials --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} | jq -r '.kubeadminUsername')
 password=$(az aro list-credentials --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} | jq -r '.kubeadminPassword')
 
 
 #----EXTRACT CONSOLE URL----#
+printf "${BLUE}Extract URLs for the ARO cluster ${RESOURCE_NAME}.${CLEAR}\n"
 console_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query "consoleProfile.url" -o tsv)
 api_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query "apiserverProfile.url" -o tsv)
 
@@ -282,6 +283,7 @@ api_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query 
 jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 cat > ${CREDS_FILE} <<EOF
 {
     "USERNAME": "${username}",
