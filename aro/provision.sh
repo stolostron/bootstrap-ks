@@ -46,6 +46,9 @@ AZURE_WORKER_COUNT=${AZURE_WORKER_COUNT:-"3"}
 # Default to 100GB disk
 AZURE_WORKER_DISK_SIZE=${AZURE_WORKER_DISK_SIZE:-"128"}
 
+# Writable directory to hold results and temporary files for containerized application - default to the current directory
+OUTPUT_DEST=${OUTPUT_DEST:-PWD}
+
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
@@ -88,8 +91,8 @@ else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
 RESOURCE_GROUP_NAME="${RESOURCE_NAME}-rg"
-STATE_FILE=$PWD/${RESOURCE_NAME}.json
-CREDS_FILE=$PWD/${RESOURCE_NAME}.creds.json
+STATE_FILE=$OUTPUT_DEST/${RESOURCE_NAME}.json
+CREDS_FILE=$OUTPUT_DEST/${RESOURCE_NAME}.creds.json
 
 
 #----LOG IN----#
@@ -155,11 +158,11 @@ fi
 if [[ ! -f ${STATE_FILE} ]]; then
     echo "{}" > ${STATE_FILE}
 fi
-jq --arg rg_name "${RESOURCE_GROUP_NAME}" '. + {RESOURCE_GROUP_NAME: $rg_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg region "${AZURE_REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg subscription "${SUBSCRIPTION}" '. + {SUBSCRIPTION: $subscription}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg platform "aro" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg rg_name "${RESOURCE_GROUP_NAME}" '. + {RESOURCE_GROUP_NAME: $rg_name}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg region "${AZURE_REGION}" '. + {REGION: $region}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg subscription "${SUBSCRIPTION}" '. + {SUBSCRIPTION: $subscription}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg platform "aro" '. + {PLATFORM: $platform}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
 
 
 #----CREATE RESOURCE GROUP----#
@@ -225,8 +228,8 @@ printf "${CLEAR}"
 
 
 #----WRITE ADDITIONAL STATE INFO----#
-jq --arg bd_rg_name "${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME}" '. + {AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME: $bd_rg_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg bd_name "${AZURE_BASE_DOMAIN}" '. + {AZURE_BASE_DOMAIN: $bd_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg bd_rg_name "${AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME}" '. + {AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME: $bd_rg_name}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg bd_name "${AZURE_BASE_DOMAIN}" '. + {AZURE_BASE_DOMAIN: $bd_name}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
 
 
 #----CREATE/MODIFY DNS RECORD SETS----#
@@ -280,10 +283,10 @@ api_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query 
 
 
 #-----DUMP STATE FILE, CREDS, AND PRINT SUCCESS----#
-jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
+jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > $OUTPUT_DEST/.tmp; mv $OUTPUT_DEST/.tmp ${STATE_FILE};
 cat > ${CREDS_FILE} <<EOF
 {
     "USERNAME": "${username}",
@@ -296,5 +299,5 @@ printf "${GREEN}ARO cluster named ${RESOURCE_NAME} provisioned successfully.\n${
 printf "${GREEN}Console URL: ${console_url}\n${CLEAR}"
 printf "${GREEN}Username: ${username}\n${CLEAR}"
 printf "${GREEN}Password: *****\n${CLEAR}"
-printf "${GREEN}Password and Credentials can be found in $(pwd)/${RESOURCE_NAME}.creds.json\n${CLEAR}"
-printf "${GREEN}State file saved for cleanup in $(pwd)/${RESOURCE_NAME}.json\n${CLEAR}"
+printf "${GREEN}Password and Credentials can be found in $OUTPUT_DEST/${RESOURCE_NAME}.creds.json\n${CLEAR}"
+printf "${GREEN}State file saved for cleanup in $OUTPUT_DEST/${RESOURCE_NAME}.json\n${CLEAR}"
