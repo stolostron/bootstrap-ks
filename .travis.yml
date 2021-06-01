@@ -1,0 +1,12 @@
+os:
+  - linux
+
+stages:
+- test
+
+jobs:
+  include:
+    - stage: test
+      name: "test aro install"
+      script:
+        - cd aro && ./install.sh
