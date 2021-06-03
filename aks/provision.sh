@@ -138,4 +138,4 @@ cat > ${OUTPUT_DEST}/${RESOURCE_NAME}.json <<EOF
     "PLATFORM": "AZURE"
 }
 EOF
-printf "${GREEN}AKS cluster provision successful.  Cluster named ${AKS_CLUSTER_NAME} created.  State file saved for cleanup in $(pwd)/${RESOURCE_NAME}.json"
+printf "${GREEN}AKS cluster provision successful.  Cluster named ${AKS_CLUSTER_NAME} created.  State file saved for cleanup in $(pwd)/${RESOURCE_NAME}.json\n"

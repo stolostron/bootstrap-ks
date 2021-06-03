@@ -17,6 +17,7 @@ images:
 # list of Resource Config to be Applied
 resources:
   - bootstrap-ks.job.yaml
+  - prereqs.yaml
 
 secretGenerator:
 - name: bootstrap-ks-config
