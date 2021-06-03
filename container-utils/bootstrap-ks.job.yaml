@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: bootstrap-ks-deploy
+  name: bootstrap-ks-provision
   namespace: bootstrap-ks
 spec:
   template:
@@ -13,47 +13,20 @@ spec:
           secretName: openshift-pull-secret
       - name: azure-cli-dir
         emptyDir: {}
+      - name: ssh-dir
+        emptyDir: {}
       - name: tmp
         emptyDir: {}
       containers:
       - name: bootstrap
         image: quay.io/gurnbenibm/bootstrapks:latest
         command: ["/bin/bash", "-c", "./provision_wrapper.sh"]
+        envFrom:
+        - secretRef:
+            name: bootstrap-ks-config
+        - secretRef:
+            name: bootstrap-ks-creds
         env:
-        - name: AZURE_PASS
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: azure_pass
-        - name: AZURE_USER
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: azure_user
-        - name: AZURE_BASE_DOMAIN_RESOURCE_GROUP_NAME
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: azure_base_domain_resource_group_name
-        - name: AZURE_BASE_DOMAIN
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: azure_base_domain
-        - name: CLUSTER_NAME
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: cluster_name
-        - name: AZURE_SUBSCRIPTION_ID
-          valueFrom:
-            secretKeyRef:
-              name: bootstrap-ks-provision-config
-              key: azure_subscription_id
-        - name: TARGET_KS
-          value: "aro"
-        - name: AZURE_REGION
-          value: "centralus"
         - name: OCP_PULL_SECRET_FILE
           value: /opt/pull-secret.txt
         - name: OUTPUT_DEST
@@ -66,6 +39,8 @@ spec:
           readOnly: true
         - name: azure-cli-dir
           mountPath: /.azure
+        - name: ssh-dir
+          mountPath: /.ssh
         - name: tmp
           mountPath: /home/tmp
       restartPolicy: Never

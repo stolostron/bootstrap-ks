@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Disable random hash suffix
+generatorOptions:
+  disableNameSuffixHash: true
+
+# namespace to deploy all Resources to
+namespace: bootstrap-ks
+
+# Point to the target job image
+images:
+  - name: bootstrap
+    newName: quay.io/gurnbenibm/bootstrapks
+    newTag: latest
+
+# list of Resource Config to be Applied
+resources:
+  - bootstrap-ks.job.yaml
+
+secretGenerator:
+- name: bootstrap-ks-config
+  env: bootstrap-ks.config.secret

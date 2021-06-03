@@ -10,6 +10,9 @@ CLEAR='\e[39m'
 # Handle MacOS being incapable of tr, grep, and others
 export LC_ALL=C
 
+# Ensure we fail out if something goes wrong
+set -e
+
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 5 ; echo '')
@@ -44,7 +47,7 @@ if [ -z "$AZURE_USER" ]; then
 fi
 
 if [ ! -z "$CLUSTER_NAME" ]; then
-    RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
+    RESOURCE_NAME="$CLUSTER_NAME"
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
@@ -53,6 +56,9 @@ fi
 if [ "$missing" -ne 0 ]; then
     exit $missing
 fi
+
+# Writable directory to hold results and temporary files for containerized application - default to the current directory
+OUTPUT_DEST=${OUTPUT_DEST:-PWD}
 
 
 #----LOG IN----#
@@ -112,17 +118,17 @@ printf "${CLEAR}"
 #----EXTRACTING KUBECONFIG----#
 printf "${BLUE}Getting Kubeconfig for cluster.${CLEAR}\n"
 printf "${YELLOW}"
-az aks get-credentials --name ${AKS_CLUSTER_NAME} --resource-group ${RESOURCE_GROUP_NAME} -f $(pwd)/${AKS_CLUSTER_NAME}.kubeconfig
+az aks get-credentials --name ${AKS_CLUSTER_NAME} --resource-group ${RESOURCE_GROUP_NAME} -f ${OUTPUT_DEST}/${RESOURCE_NAME}.kubeconfig
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to get credentials for AKS cluster ${AKS_CLUSTER_NAME}, complaining and continuing${CLEAR}\n"
     exit 1
 fi
-printf "You can find your kubeconfig file for this cluster in $(pwd)/${AKS_CLUSTER_NAME}.kubeconfig.\n"
+printf "You can find your kubeconfig file for this cluster in ${OUTPUT_DEST}/${RESOURCE_NAME}.kubeconfig.\n"
 printf "${CLEAR}"
 
 
 #-----DUMP STATE FILE----#
-cat > ./${AKS_CLUSTER_NAME}.json <<EOF
+cat > ${OUTPUT_DEST}/${RESOURCE_NAME}.json <<EOF
 {
     "RESOURCE_GROUP_NAME": "${RESOURCE_GROUP_NAME}",
     "CLUSTER_NAME": "${AKS_CLUSTER_NAME}",
@@ -132,4 +138,4 @@ cat > ./${AKS_CLUSTER_NAME}.json <<EOF
     "PLATFORM": "AZURE"
 }
 EOF
-printf "${GREEN}AKS cluster provision successful.  Cluster named ${AKS_CLUSTER_NAME} created.  State file saved for cleanup in $(pwd)/${AKS_CLUSTER_NAME}.json"
+printf "${GREEN}AKS cluster provision successful.  Cluster named ${AKS_CLUSTER_NAME} created.  State file saved for cleanup in $(pwd)/${RESOURCE_NAME}.json"
