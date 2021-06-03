@@ -1,2 +1,4 @@
 container-utils/bootstrap-ks.config.secret
 container-utils/bootstrap-ks.job.yaml
+.*
+bin/
