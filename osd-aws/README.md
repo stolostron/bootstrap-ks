@@ -17,8 +17,10 @@ export AWS_REGION=<region>  # defaults to us-east-1
 exoprt AWS_NODE_COUNT=<number> $ defaults to 3
 
 # Optional
+
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
 # if CLUSTER_NAME is not specified, we will use the first 8 characters of the system's username
+# note that cluster names are a maximum of 15 characters, and we append three - so you effectively get 12
 ```
 
 2. run `./provision.sh`

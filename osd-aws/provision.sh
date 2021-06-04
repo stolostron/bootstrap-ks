@@ -61,10 +61,8 @@ fi
 
 if [ ! -z "$CLUSTER_NAME" ]; then
     RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
-    printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
-else
-    printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
+printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 
 
 #----VERIFY ocm CLI----#

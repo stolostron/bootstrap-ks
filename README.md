@@ -9,4 +9,4 @@ We have automation in different subfolder of the project for each supported *KS 
 * [EKS (Amazon Elastic Kubernetes Service)](eks)
 * [GKE (Google Kubernetes Engine)](gke)
 * [IKS (IBM Kubernetes Service) and ROKS (Red Hat OpenShift Kubernetes Service)](iks)
-* [OSD on AWS (OpenShift Dedicated on AWS) (osd-aws)
+* [OSD on AWS (OpenShift Dedicated on AWS)](osd-aws)
