@@ -14,7 +14,7 @@ export AWS_ACCOUNT_ID=<your AWS account ID>
 export AWS_ACCESS_KEY_ID=<your AWS access key ID>
 export AWS_SECRET_ACCESS_KEY=<your AWS secret access key>
 export AWS_REGION=<region>  # defaults to us-east-1
-exoprt AWS_NODE_COUNT=<number> $ defaults to 3
+export AWS_NODE_COUNT=<number> # defaults to 3
 
 # Optional
 
