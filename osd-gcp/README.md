@@ -9,8 +9,13 @@ This module can be used to install dependencies for OpenShift Dedicated on GCP (
 1. Set the following env vars before provisioning in GCP:
 
 ```
+export GCLOUD_CREDS_FILE=<path to your osd-ccs-admin service account json>
+export OCM_TOKEN=<Red Hat OCM token>
 
 # Optional
+export GCLOUD_REGION=<Google Cloud region, defaults to "us-east1">
+export GCLOUD_NODE_COUNT=<Node count, defaults to "3">
+export OCM_URL=<one of: 'production', 'staging', 'integration'>
 
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
 # if CLUSTER_NAME is not specified, we will use the first 8 characters of the system's username
