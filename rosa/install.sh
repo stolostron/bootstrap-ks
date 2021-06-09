@@ -76,10 +76,12 @@ if [[ ! $(which rosa) ]]; then
     fi;
     printf "${YELLOW}";
     $PWD/vendor/rosa version;
+    ROSA=$PWD/vendor/rosa
     printf "${CLEAR}";
 else
     printf "${GREEN}Using the 'rosa' CLI installed at $(which rosa) with version:${CLEAR}\n";
     printf "${YELLOW}";
+    ROSA=$(which rosa)
     rosa version;
     printf "${CLEAR}";
 fi
