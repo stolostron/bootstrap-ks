@@ -99,5 +99,5 @@ printf "${CLEAR}"
 
 
 #----SUCCEED IF WE MADE IT THIS FAR----#
-printf "${GREEN}Successfully deleted the ARO Cluster ${CLUSTER_NAME} and related resources.  Deleting state file.${CLEAR}\n"
+printf "${GREEN}Successfully deleted the ROSA Cluster ${CLUSTER_NAME} and related resources.  Deleting state file.${CLEAR}\n"
 rm -f $1
