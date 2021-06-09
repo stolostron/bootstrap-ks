@@ -10,3 +10,5 @@ We have automation in different subfolder of the project for each supported *KS 
 * [GKE (Google Kubernetes Engine)](gke)
 * [IKS (IBM Kubernetes Service) and ROKS (Red Hat OpenShift Kubernetes Service)](iks)
 * [ROSA (Red Hat OpenShift Service on AWS)](rosa)
+* [OSD on AWS (OpenShift Dedicated on AWS)](osd-aws)
+* [OSD on GCP (OpenShift Dedicated on Google Cloud)](osd-gcp)
