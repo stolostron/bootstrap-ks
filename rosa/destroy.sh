@@ -13,6 +13,17 @@ if [[ "$COLOR" == "False" || "$COLOR" == "false" ]]; then
     YELLOW='\e[39m'
 fi
 
+# Check for vendored or global 'rosa' cli
+if [[ $(which rosa) ]]; then
+    ROSA=$(which rosa)
+elif [[ -x $PWD/vendor/rosa ]]; then
+    ROSA=$PWD/vendor/rosa
+else
+    printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
+    exit 1
+fi
+printf "${BLUE}Using 'rosa' CLI installed at ${ROSA}${CLEAR}\n"
+
 #----LOAD ENV VARS FROM INPUT FILE----#
 if [ -z "$1" ]; then
     printf "Usage: ./destroy.sh <path-to-json-file>\n"
@@ -67,13 +78,13 @@ fi
 #----LOG IN----#
 printf "${BLUE}Logging in to the 'rosa' cli.${CLEAR}\n"
 printf "${YELLOW}"
-rosa login --token=${ROSA_TOKEN}
+${ROSA} login --token=${ROSA_TOKEN}
 printf "${CLEAR}"
 
 
 #-----VALIDATE THE AWS ACCOUNT ID-----#
 printf "${BLUE}Validate that the user is logged into the AWS account that hold the ${CLUSTER_NAME} cluster.${CLEAR}\n"
-current_aws_id=$(rosa whoami | grep "AWS Account ID:" | sed -n "s/AWS Account ID:[ ]*\(.*\)/\1/p")
+current_aws_id=$(${ROSA} whoami | grep "AWS Account ID:" | sed -n "s/AWS Account ID:[ ]*\(.*\)/\1/p")
 if [[ "${current_aws_id}" != "${AWS_ACCOUNT_ID}" ]]; then
     printf "${YELLOW}The current AWS account ID (${current_aws_id}) doesn't match the ID of the account where ${CLUSTER_NAME} was created.${CLEAR}\n"
     printf "${YELLOW}Make sure you're logged in to the same account (ID: ${AWS_ACCOUNT_ID}) that was used to create ${CLUSTER_NAME} and re-run.${CLEAR}\n"
@@ -87,14 +98,14 @@ fi
 #-----LOG THE DEPROVISIONER-----#
 printf "${BLUE}Cluster will be deprovisioned as:${CLEAR}\n"
 printf "${BLUE}"
-rosa whoami
+${ROSA} whoami
 printf "${CLEAR}"
 
 
 #-----DELETE THE CLUSTER-----#
 printf "${BLUE}Launching the cluster deprovision for ${CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-rosa delete cluster --cluster=${CLUSTER_NAME} --yes --watch
+${ROSA} delete cluster --cluster=${CLUSTER_NAME} --yes --watch
 printf "${CLEAR}"
 
 
