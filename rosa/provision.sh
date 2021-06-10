@@ -137,7 +137,9 @@ fi
 jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg region "${AWS_REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg platform "rosa" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-
+# Load account ID and log in JSON to ensure that cleanup is successful if provision fails
+aws_account_id=$(${ROSA} whoami | grep "AWS Account ID:" | sed -n "s/AWS Account ID:[ ]*\(.*\)/\1/p")
+jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 
 #-----PROVISION CLUSTER AND WATCH LOGS-----#
 printf "${BLUE}Provisioning the ROSA cluster ${RESOURCE_NAME} in ${AWS_REGION}.${CLEAR}\n"
@@ -158,6 +160,7 @@ printf "${CLEAR}"
 #-----EXTRACT DETAILS-----#
 api_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "API URL:" | sed -n "s/API URL:[ ]*\(.*\)/\1/p")
 console_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "Console URL:" | sed -n "s/Console URL:[ ]*\(.*\)/\1/p")
+# Update account ID logged earlier to match that of the cluster (just in case)
 aws_account_id=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "AWS Account:" | sed -n "s/AWS Account:[ ]*\(.*\)/\1/p")
 
 
