@@ -33,7 +33,7 @@ if [[ ! $(which aws) ]]; then
         # Linux
         curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip";
         unzip awscliv2.zip;
-        sudo ./aws/install;
+        ./aws/install;
         printf "${GREEN}Installed the aws CLI at $(which aws) with version:${CLEAR}\n";
         printf "${YELLOW}";
         aws --version;
