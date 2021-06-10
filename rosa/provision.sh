@@ -21,6 +21,17 @@ export LC_ALL=C
 # Ensure we fail out if something goes wrong
 set -e
 
+# Check for vendored or global 'rosa' cli
+if [[ $(which rosa) ]]; then
+    ROSA=$(which rosa)
+elif [[ -x $PWD/vendor/rosa ]]; then
+    ROSA=$PWD/vendor/rosa
+else
+    printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
+    exit 1
+fi
+printf "${BLUE}Using 'rosa' CLI installed at ${ROSA}${CLEAR}\n"
+
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
 RANDOM_IDENTIFIER=$(head /dev/urandom | LC_CTYPE=C tr -dc a-z0-9 | head -c 5 ; echo '')
@@ -89,25 +100,32 @@ STATE_FILE=$PWD/${RESOURCE_NAME}.json
 #----LOG IN----#
 printf "${BLUE}Logging in to the 'rosa' cli.${CLEAR}\n"
 printf "${YELLOW}"
-rosa login --token=${ROSA_TOKEN}
+${ROSA} login --token=${ROSA_TOKEN}
 printf "${CLEAR}"
 
 
 #----VERIFY PERMISSIONS AND QUOTA-----#
 printf "${BLUE}Verifying Permissions on AWS Account.${CLEAR}\n"
 printf "${YELLOW}"
-rosa verify permissions
+${ROSA} verify permissions
 printf "${CLEAR}"
 printf "${BLUE}Verifying Quota in region ${AWS_REGION}.${CLEAR}\n"
 printf "${YELLOW}"
-rosa verify quota --region=${AWS_REGION}
+${ROSA} verify quota --region=${AWS_REGION}
+printf "${CLEAR}"
+
+
+#-----RUN ROSA INIT-----#
+printf "${BLUE}Run 'rosa init' to prepare account.${CLEAR}\n"
+printf "${YELLOW}"
+${ROSA} init
 printf "${CLEAR}"
 
 
 #-----LOG THE PROVISIONER-----#
 printf "${BLUE}Cluster will be provisioned as:${CLEAR}\n"
 printf "${BLUE}"
-rosa whoami
+${ROSA} whoami
 printf "${CLEAR}"
 
 
@@ -124,7 +142,7 @@ jq --arg platform "rosa" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .t
 #-----PROVISION CLUSTER AND WATCH LOGS-----#
 printf "${BLUE}Provisioning the ROSA cluster ${RESOURCE_NAME} in ${AWS_REGION}.${CLEAR}\n"
 printf "${YELLOW}"
-rosa create cluster \
+${ROSA} create cluster \
     --cluster-name=${RESOURCE_NAME} \
     --region=${AWS_REGION} \
     --version=${OCP_VERSION} \
@@ -138,14 +156,14 @@ printf "${CLEAR}"
 
 
 #-----EXTRACT DETAILS-----#
-api_url=$(rosa describe cluster --cluster=${RESOURCE_NAME} | grep "API URL:" | sed -n "s/API URL:[ ]*\(.*\)/\1/p")
-console_url=$(rosa describe cluster --cluster=${RESOURCE_NAME} | grep "Console URL:" | sed -n "s/Console URL:[ ]*\(.*\)/\1/p")
-aws_account_id=$(rosa describe cluster --cluster=${RESOURCE_NAME} | grep "AWS Account:" | sed -n "s/AWS Account:[ ]*\(.*\)/\1/p")
+api_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "API URL:" | sed -n "s/API URL:[ ]*\(.*\)/\1/p")
+console_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "Console URL:" | sed -n "s/Console URL:[ ]*\(.*\)/\1/p")
+aws_account_id=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "AWS Account:" | sed -n "s/AWS Account:[ ]*\(.*\)/\1/p")
 
 
 #-----CONFIGURE AUTH-----#
 printf "${BLUE}Creating an admin user.${CLEAR}\n"
-rosa create admin --cluster=${RESOURCE_NAME} > .tmp_creds
+${ROSA} create admin --cluster=${RESOURCE_NAME} > .tmp_creds
 username=$(cat .tmp_creds | grep "username" | sed -n "s/.*--username[ ]*\([^ ]*\)[ ]*.*/\1/p")
 password=$(cat .tmp_creds | grep "password" | sed -n "s/.*--password[ ]*\([^ ]*\)[ ]*.*/\1/p")
 rm -f .tmp_creds
