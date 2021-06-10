@@ -178,6 +178,7 @@ jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > .tmp; mv
 jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg identity_provider "Cluster-Admin" '. + {IDENTITY_PROVIDER: $identity_provider}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
 printf "${GREEN}ROSA cluster named ${RESOURCE_NAME} provisioned successfully.\n${CLEAR}"
 printf "${GREEN}Console URL: ${console_url}\n${CLEAR}"
 printf "${GREEN}API URL: ${api_url}\n${CLEAR}"
