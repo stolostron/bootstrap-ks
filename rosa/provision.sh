@@ -165,7 +165,7 @@ aws_account_id=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "AWS
 
 
 #-----CONFIGURE AUTH-----#
-printf "${BLUE}Creating an admin user.${CLEAR}\n"
+printf "${BLUE}Creating an admin user on ${RESOURCE_NAME}.${CLEAR}\n"
 ${ROSA} create admin --cluster=${RESOURCE_NAME} > .tmp_creds
 username=$(cat .tmp_creds | grep "username" | sed -n "s/.*--username[ ]*\([^ ]*\)[ ]*.*/\1/p")
 password=$(cat .tmp_creds | grep "password" | sed -n "s/.*--password[ ]*\([^ ]*\)[ ]*.*/\1/p")
