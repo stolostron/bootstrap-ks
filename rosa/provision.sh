@@ -130,7 +130,7 @@ printf "${CLEAR}"
 
 
 #----WRITE INITIAL STATE FILE----#
-printf "${BLUE}Writing inital state before starting provision.${CLEAR}"
+printf "${BLUE}Writing inital state before starting provision.${CLEAR}\n"
 if [[ ! -f ${STATE_FILE} ]]; then
     echo "{}" > ${STATE_FILE}
 fi
