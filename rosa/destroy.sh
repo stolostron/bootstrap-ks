@@ -34,13 +34,15 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 CLUSTER_NAME=$(cat $1 | jq -r '.CLUSTER_NAME')
-REGION=$(cat $1 | jq -r '.REGION')
 PLATFORM=$(cat $1 | jq -r '.PLATFORM')
 USERNAME=$(cat $1 | jq -r '.USERNAME')
 PASSWORD=$(cat $1 | jq -r '.PASSWORD')
 CONSOLE_URL=$(cat $1 | jq -r '.CONSOLE_URL')
 API_URL=$(cat $1 | jq -r '.API_URL')
 AWS_ACCOUNT_ID=$(cat $1 | jq -r '.AWS_ACCOUNT_ID')
+
+# Export AWS_REGION as it is used under the covers by the aws cli
+export AWS_REGION=$(cat $1 | jq -r '.REGION')
 
 # Set a skipped flag that we'll set if we skip any deletions.  Used to skip deletion of state files.
 skipped=0
