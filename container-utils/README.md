@@ -24,7 +24,7 @@ AZURE_USER - yoru Azure console username - this requirement will eventually be o
 AZURE_SUBSCRIPTION_ID - the azure subscription id you wish to use
 ```
 4. Run `./create_job_secrets.sh` to create two secrets holding the above env vars that will be mounted and used in the provision.  
-5. `cp bootstrap-ks.config.secret.example bootstrap-ks.config.secret` and edit `bootstrap-ks.config.secret` to customize your cluster provision as desired.  **NOTE:** Be sure to set `CREATE=true` and `DESTROY=false` to provision only.  
+5. `cp bootstrap-ks.config.secret.example bootstrap-ks.config.secret` and edit `bootstrap-ks.config.secret` to customize your cluster provision as desired.  **NOTE:** Be sure to set `OPERATION=CREATE` to provision.  
 6. `cp bootstrap-ks.job.yaml.example bootstrap-ks.job.yaml` and edit `bootstrap-ks.job.yaml`'s name and credentials secrets as desired.  Note - the credentials secret must be changed when provisioning different platforms, config secrets should be changed each time you provision or deprovision a different cluster.
 8. *If you built a custom bootstrap-ks image* update `kustomization.yaml` to point at that image.
 9. Run `oc apply -k .` form within `/container-utils` to create the prereqs and provision job.  
@@ -32,4 +32,4 @@ AZURE_SUBSCRIPTION_ID - the azure subscription id you wish to use
 
 ## Deprovisioning a Cluster as a Kubernetes Job
 
-The process for deprovisioning a cluster provisoined as a Kubernetes job is almost idential to provisoning!  Simply repeat the process but set `CREATE=false` and `DESTROY=true` in `bootstrap-ks.config.secret` and ensure that the secret provided has access to the provisioned cluster and the `CLUSTER_NAME` is the same.  Also of note - you need to edit the job name in `bootstrap-ks.job.yaml` so it doesn't collide with your original provision job.  
+The process for deprovisioning a cluster provisoined as a Kubernetes job is almost idential to provisoning!  Simply repeat the process but set `OPERATION=DESTROY` in `bootstrap-ks.config.secret` and ensure that the secret provided has access to the provisioned cluster and the `CLUSTER_NAME` is the same.  Also of note - you need to edit the job name in `bootstrap-ks.job.yaml` so it doesn't collide with your original provision job.  

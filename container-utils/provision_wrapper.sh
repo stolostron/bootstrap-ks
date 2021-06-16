@@ -8,7 +8,9 @@
 #       on the provisioned cluster.  
 #
 
-if [[ "$DESTROY" == "True" || "$DESTROY" == "true" ]]; then
+OPERATION=$(echo $OPERATION | tr '[:lower:]' '[:upper:]')
+
+if [[ "$OPERATION" == "DESTROY" ]]; then
     if [[ "$TARGET_KS" == "aro" ]]; then
         echo "#### Destroying ${CLUSTER_NAME} on ARO"
         pushd aro
@@ -27,9 +29,7 @@ if [[ "$DESTROY" == "True" || "$DESTROY" == "true" ]]; then
         echo "Platform ${TARGET} currently unsupported via image/kubernetes job.  Exiting"
         exit 0
     fi
-fi
-
-if [[ "$CREATE" == "True" || "$CREATE" == "true" ]]; then
+elif [[ "$OPERATION" == "CREATE" ]]; then
     if [[ "$TARGET_KS" == "aro" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on ARO"
         STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
@@ -69,4 +69,7 @@ if [[ "$CREATE" == "True" || "$CREATE" == "true" ]]; then
         echo "Platform ${TARGET} currently unsupported via image/kubernetes job.  Exiting"
         exit 0
     fi
+else
+    echo "Operation '${OPERATION}' not supported, only supported operations are 'CREATE' or 'DESTROY'."
+    exit 1
 fi

@@ -55,11 +55,6 @@ if [ -z "$AZURE_BASE_DOMAIN" ]; then
     missing=1
 fi
 
-if [ -z "$OCP_PULL_SECRET_FILE" ]; then
-    printf "${RED}OCP_PULL_SECRET_FILE env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
-
 if [ "$missing" -ne 0 ]; then
     exit $missing
 fi
