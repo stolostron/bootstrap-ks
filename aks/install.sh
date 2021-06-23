@@ -76,7 +76,9 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azu
         apk add --no-cache python3
         python3 -m ensurepip
         rm -r /usr/lib/python*/ensurepip
-        pip3 install --upgrade pip setuptools
+        python3 -m pip install --upgrade pip==21.1.1
+        python3 --version && pip3 --version
+        pip3 install --upgrade setuptools
         rm -r /root/.cache
         pip3 install wheel
         pip3 install --upgrade  azure-cli --no-cache-dir
