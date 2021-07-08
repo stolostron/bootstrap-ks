@@ -118,7 +118,7 @@ printf "${CLEAR}"
 #-----RUN ROSA INIT-----#
 printf "${BLUE}Run 'rosa init' to prepare account.${CLEAR}\n"
 printf "${YELLOW}"
-${ROSA} init --region=${AWS_REGION}
+${ROSA} init
 printf "${CLEAR}"
 
 
