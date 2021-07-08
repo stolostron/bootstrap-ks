@@ -30,7 +30,7 @@ else
     printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
     exit 1
 fi
-printf "${BLUE}Using 'rosa' CLI installed at ${ROSA}${CLEAR}\n"
+printf "${BLUE}Using 'rosa' CLI version $(${ROSA} version) installed at ${ROSA}${CLEAR}\n"
 
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
@@ -118,7 +118,7 @@ printf "${CLEAR}"
 #-----RUN ROSA INIT-----#
 printf "${BLUE}Run 'rosa init' to prepare account.${CLEAR}\n"
 printf "${YELLOW}"
-${ROSA} init
+${ROSA} init --region=${AWS_REGION}
 printf "${CLEAR}"
 
 
