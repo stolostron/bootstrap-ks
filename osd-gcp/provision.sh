@@ -20,7 +20,6 @@ else
   USER=${USER:-"jenkins"}
 fi
 
-
 SHORTNAME=$(echo $USER | head -c 7)
 
 # Generate a default resource name
@@ -30,7 +29,8 @@ NAME_SUFFIX="odgc"
 # Default to us-east1
 GCLOUD_REGION=${GCLOUD_REGION:-"us-east1"}
 GCLOUD_NODE_COUNT=${GCLOUD_NODE_COUNT:-"3"}
-GCLOUD_MACHINE_TYPE=${GCLOUD_MACHINE_TYPE:-"n1-standard-4"}
+GCLOUD_MACHINE_TYPE=${GCLOUD_MACHINE_TYPE:-"custom-4-16384"}
+# was: GCLOUD_MACHINE_TYPE=${GCLOUD_MACHINE_TYPE:-"n1-standard-4"}
 
 # OCM_URL can be one of: 'production', 'staging', 'integration'
 OCM_URL=${OCM_URL:-"production"}
@@ -72,106 +72,71 @@ fi
 #----CREATE CLUSTER----#
 OSDGCP_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an OSD cluster on GCP named ${OSDGCP_CLUSTER_NAME}.${CLEAR}\n"
-printf "${YELLOW}"
-
-OPTIONAL_PARAMS=""
 
 ocm create cluster --ccs --service-account-file $GCLOUD_CREDS_FILE --provider gcp --region $GCLOUD_REGION --compute-machine-type $GCLOUD_MACHINE_TYPE --compute-nodes $GCLOUD_NODE_COUNT $OSDGCP_CLUSTER_NAME
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision cluster. See error above. Exiting${CLEAR}\n"
     exit 1
 fi
-printf "${GREEN}Successfully provisioned cluster ${OSDGCP_CLUSTER_NAME}.${CLEAR}\n"
 
-CLUSTER_ID=`ocm list clusters --parameter search="name like '${OSDGCP_CLUSTER_NAME}'" --no-headers | awk  '{ print $1 }'`
+CLUSTER_NAME=$OSDGCP_CLUSTER_NAME
 
-#----Make KUBECONFIG that is useable from anywhere ----#
-export KUBECONFIG_SAVED=$KUBECONFIG
-export KUBECONFIG=$(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig
+printf "${GREEN}Successfully provisioned cluster ${CLUSTER_NAME}.${CLEAR}\n"
 
-# Check for which base64 command we have available so we can use the right option
-echo | base64 -w 0 > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-  # GNU coreutils base64, '-w' supported
-  BASE64_OPTION=" -w 0"
-else
-  # Openssl base64, no wrapping by default
-  BASE64_OPTION=" "
-fi
+printf "${GREEN}Cluster name: '${CLUSTER_NAME}${CLEAR}'\n"
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: cluster-admin
-  namespace: kube-system
-EOF
+CLUSTER_ID=`ocm list clusters --parameter search="name like '${CLUSTER_NAME}'" --no-headers | awk  '{ print $1 }'`
+printf "${GREEN}Cluster ID: '${CLUSTER_ID}${CLEAR}'\n"
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kube-system-cluster-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: cluster-admin
-  namespace: kube-system
-EOF
+CLUSTER_DOMAIN=`ocm get /api/clusters_mgmt/v1/clusters/$CLUSTER_ID | jq -r '.dns.base_domain'`
+printf "${GREEN}Cluster domain: '${CLUSTER_DOMAIN}${CLEAR}'\n"
 
-sleep 1
+sed -e "s;__CLUSTER_NAME__;$CLUSTER_NAME;g" \
+    -e "s;__CLUSTER_ID__;$CLUSTER_ID;g" \
+    -e "s;__CLUSTER_DOMAIN__;$CLUSTER_DOMAIN;g" \
+                dex-idp-config.yaml.template \
+                > $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml
 
-cat > "$(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig.portable" <<EOF
-apiVersion: v1
-clusters:
-- cluster:
-    server: $(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-    insecure-skip-tls-verify: true
-  name: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-contexts:
-- context:
-    cluster: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-    namespace: default
-    user: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-  name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-current-context: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-kind: Config
-preferences: {}
-users:
-- name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-  user:
-    token: $(kubectl get $(kubectl get secret -n kube-system -o name | grep cluster-admin-token | head -n 1) -n kube-system -o jsonpath={.data.token} | base64 -d ${BASE64_OPTION})
-EOF
+oc login --token=$IDP_SERVICE_ACCOUNT_TOKEN --server=$IDP_ISSUER_LOGIN_SERVER
+oc apply -f $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml
+oc logout
 
-# take portable kubeconfig and replace original kubeconfig
-cp $(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig.portable $(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig
-rm $(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig.portable
+# Configure IDP and users
+NAMELEN=`printf "%02x\n" ${#GITHUB_USER}`
+printf "%b" '\x0a' > username.encoded
+printf "%b" '\x'$NAMELEN >> username.encoded
+printf "%s" $GITHUB_USER >> username.encoded
+printf "%b" '\x12\x06' >> username.encoded
+printf "%s" 'github' >> username.encoded
+base64 username.encoded | sed 's/\=$//' > username.64
+rm username.encoded
 
-# Set KUBECONFIG to what it used to be
-export KUBECONFIG=$KUBECONFIG_SAVED
+# Need to loop over this - to wait until it comes available
 
+while ! ocm create idp --cluster=$CLUSTER_ID --type openid --client-id  $CLUSTER_NAME --client-secret $CLUSTER_ID-$CLUSTER_ID --issuer-url $IDP_ISSUER_URL --email-claims email --name-claims fullName,name --username-claims fullName,preferred_username,email,name
+do
+    printf "${YELLOW}Waiting for cluster to become active...${CLEAR}\n"
+    sleep 30
+done
 
+printf "${GREEN}Adding github user ${GITHUB_USER} as admin.${CLEAR}\n"
+
+ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=cluster-admins
+ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=dedicated-admins
+rm username.64
 
 #-----DUMP STATE FILE----#
+LOGIN_URL=https://console-openshift-console.apps.$OSDGCP_CLUSTER_NAME.$CLUSTER_DOMAIN
 cat > $(pwd)/${OSDGCP_CLUSTER_NAME}.json <<EOF
 {
     "CLUSTER_NAME": "${OSDGCP_CLUSTER_NAME}",
     "CLUSTER_ID": "${CLUSTER_ID}",
     "REGION": "${GCLOUD_REGION}",
-    "URL": "${OCM_URL}",
+    "OCM_URL": "${OCM_URL}",
+    "LOGIN_URL": "${LOGIN_URL}",
     "PLATFORM": "OSD-GCP"
 }
 EOF
-
-
-#----EXTRACTING KUBECONFIG----#
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${OSDGCP_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
-printf "${CLEAR}"
-
-
 
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDGCP_CLUSTER_NAME} created. \n"
 printf "State file saved for cleanup in $(pwd)/${OSDGCP_CLUSTER_NAME}.json${CLEAR}\n"
