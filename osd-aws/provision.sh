@@ -152,4 +152,4 @@ cat > $(pwd)/${OSDAWS_CLUSTER_NAME}.json <<EOF
 EOF
 
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDAWS_CLUSTER_NAME} created. \n"
-printf "State files saved for cleanup in $(pwd)/${OSDAWS_CLUSTER_NAME}.json and $(pwd)/dex-idp-config.yaml.${CLEAR}\n"
+printf "State files saved for cleanup in $(pwd)/${OSDAWS_CLUSTER_NAME}.json and $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml.${CLEAR}\n"

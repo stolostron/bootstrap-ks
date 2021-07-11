@@ -139,4 +139,5 @@ cat > $(pwd)/${OSDGCP_CLUSTER_NAME}.json <<EOF
 EOF
 
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDGCP_CLUSTER_NAME} created. \n"
-printf "State file saved for cleanup in $(pwd)/${OSDGCP_CLUSTER_NAME}.json${CLEAR}\n"
+printf "State files saved for cleanup in $(pwd)/${OSDGCP_CLUSTER_NAME}.json and $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml.${CLEAR}\n"
+
