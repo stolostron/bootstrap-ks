@@ -11,6 +11,10 @@ This module can be used to install dependencies for OpenShift Dedicated on GCP (
 ```
 export GCLOUD_CREDS_FILE=<path to your osd-ccs-admin service account json>
 export OCM_TOKEN=<Red Hat OCM token>
+export IDP_ISSUER_URL=<https://sso...>
+export IDP_ISSUER_LOGIN_SERVER=<https://api...>
+export IDP_ISSUER_LOGIN_TOKEN=<service account login token>
+export GITHUB_USER=<github user to be authorized as admin>
 
 # Optional
 export GCLOUD_REGION=<Google Cloud region, defaults to "us-east1">
@@ -23,17 +27,7 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 ```
 
 2. run `./provision.sh`
-3. if successful, you will see a `.json` file with metadata for your cluster!
-4. You will then need to run the following commands interactively:
-
-```
-ocm create idp --cluster=<cluster_id>  <-- choose github, follow the prompts, give your app permission in github
-ocm create user <github user> --cluster=<cluster_id> --group=cluster-admins
-ocm create user <github user> --cluster=<cluster_id> --group=dedicated-admins
-Log in to your cluster, get the login token
-oc login
-```
-...and now you have a kubeconifg with your credentials.
+3. if successful, you will see a `.json` and a `.yaml` file with metadata for your cluster!
 
 ### Cleaning up a cluster
 1. run `./destroy.sh <.json file of your cluster metadata>`

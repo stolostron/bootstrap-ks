@@ -16,6 +16,12 @@ export AWS_SECRET_ACCESS_KEY=<your AWS secret access key>
 export AWS_REGION=<region>  # defaults to us-east-1
 export AWS_NODE_COUNT=<number> # defaults to 3
 
+export IDP_ISSUER_URL=<https://sso...>
+export IDP_ISSUER_LOGIN_SERVER=<https://api...>
+export IDP_ISSUER_LOGIN_TOKEN=<service account login token>
+
+export GITHUB_USER=<github user to be authorized as admin>
+
 # Optional
 
 export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use it as a base name for all resources created and append a unique identifier
@@ -24,17 +30,10 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 ```
 
 2. run `./provision.sh`
-3. if successful, you will see a `.json` file with metadata for your cluster!
-4. You will then need to run the following commands interactively:
+3. if successful, you will see a `.json` and a `.yaml` file with metadata for your cluster!
+4. You can log into your cluster using your github ID and 2 factor authentication.
 
 ```
-ocm create idp --cluster=<cluster_id>  <-- choose github, follow the prompts, give your app permission in github
-ocm create user <github user> --cluster=<cluster_id> --group=cluster-admins
-ocm create user <github user> --cluster=<cluster_id> --group=dedicated-admins
-Log in to your cluster, get the login token
-oc login
-```
-...and now you have a kubeconifg with your credentials.
 
 ### Cleaning up a cluster
 1. run `./destroy.sh <.json file of your cluster metadata>`
