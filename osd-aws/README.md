@@ -18,7 +18,7 @@ export AWS_NODE_COUNT=<number> # defaults to 3
 
 export IDP_ISSUER_URL=<https://sso...>
 export IDP_ISSUER_LOGIN_SERVER=<https://api...>
-export IDP_ISSUER_LOGIN_TOKEN=<service account login token>
+export IDP_SERVICE_ACCOUNT_TOKEN=<service account login token>
 
 export GITHUB_USER=<github user to be authorized as admin>
 
@@ -32,8 +32,6 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 2. run `./provision.sh`
 3. if successful, you will see a `.json` and a `.yaml` file with metadata for your cluster!
 4. You can log into your cluster using your github ID and 2 factor authentication.
-
-```
 
 ### Cleaning up a cluster
 1. run `./destroy.sh <.json file of your cluster metadata>`
