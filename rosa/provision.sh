@@ -48,7 +48,7 @@ SHORTNAME=$(echo $USER | head -c 8)
 RESOURCE_NAME="$SHORTNAME-$RANDOM_IDENTIFIER"
 
 # Default to us-east-1
-AWS_REGION=${AWS_REGION:-"us-east-1"}
+export AWS_REGION=${AWS_REGION:-"us-east-1"}
 
 # Default to latest (empty)
 OCP_VERSION=${OCP_VERSION:-""}
