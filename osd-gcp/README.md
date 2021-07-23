@@ -11,10 +11,13 @@ This module can be used to install dependencies for OpenShift Dedicated on GCP (
 ```
 export GCLOUD_CREDS_FILE=<path to your osd-ccs-admin service account json>
 export OCM_TOKEN=<Red Hat OCM token>
+
 export IDP_ISSUER_URL=<https://sso...>
 export IDP_ISSUER_LOGIN_SERVER=<https://api...>
-export IDP_ISSUER_LOGIN_TOKEN=<service account login token>
+export IDP_SERVICE_ACCOUNT_TOKEN=<service account login token>
+
 export GITHUB_USER=<github user to be authorized as admin>
+
 
 # Optional
 export GCLOUD_REGION=<Google Cloud region, defaults to "us-east1">

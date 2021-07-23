@@ -111,7 +111,7 @@ sed -e "s;__CLUSTER_NAME__;$CLUSTER_NAME;g" \
                 > $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml
 
 oc login --token=$IDP_SERVICE_ACCOUNT_TOKEN --server=$IDP_ISSUER_LOGIN_SERVER
-oc apply -f dex-idp-config.yaml
+oc apply -f $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml
 oc logout
 
 # Configure IDP and users
