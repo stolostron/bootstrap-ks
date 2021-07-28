@@ -20,6 +20,10 @@ else
   USER=${USER:-"jenkins"}
 fi
 
+# Ensure ADMIN_USER/PASSWORD have values
+ADMIN_USER=${ADMIN_USER:-"Cluster-Admin"}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-"`head /dev/urandom | LC_CTYPE=C tr -dc A-Za-z0-9 | head -c 80 ; echo ''`"}
+
 SHORTNAME=$(echo $USER | head -c 7)
 
 # Generate a default resource name
@@ -41,6 +45,10 @@ missing=0
 
 if [ -z "$GCLOUD_CREDS_FILE" ]; then
     printf "${RED}GCLOUD_CREDS_FILE env var not set. flagging for exit.${CLEAR}\n"
+    missing=1
+fi
+if [ -z "$OCM_TOKEN" ]; then
+    printf "${RED}OCM_TOKEN env var not set. flagging for exit.${CLEAR}\n"
     missing=1
 fi
 
@@ -79,9 +87,9 @@ if [ "$?" -ne 0 ]; then
     exit 1
 fi
 
-CLUSTER_NAME=$OSDGCP_CLUSTER_NAME
-
 printf "${GREEN}Successfully provisioned cluster ${CLUSTER_NAME}.${CLEAR}\n"
+
+CLUSTER_NAME=$OSDGCP_CLUSTER_NAME
 
 printf "${GREEN}Cluster name: '${CLUSTER_NAME}${CLEAR}'\n"
 
@@ -91,53 +99,40 @@ printf "${GREEN}Cluster ID: '${CLUSTER_ID}${CLEAR}'\n"
 CLUSTER_DOMAIN=`ocm get /api/clusters_mgmt/v1/clusters/$CLUSTER_ID | jq -r '.dns.base_domain'`
 printf "${GREEN}Cluster domain: '${CLUSTER_DOMAIN}${CLEAR}'\n"
 
-sed -e "s;__CLUSTER_NAME__;$CLUSTER_NAME;g" \
-    -e "s;__CLUSTER_ID__;$CLUSTER_ID;g" \
-    -e "s;__CLUSTER_DOMAIN__;$CLUSTER_DOMAIN;g" \
-                dex-idp-config.yaml.template \
-                > $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml
-
-oc login --token=$IDP_SERVICE_ACCOUNT_TOKEN --server=$IDP_ISSUER_LOGIN_SERVER
-oc apply -f $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml
-oc logout
-
 # Configure IDP and users
-NAMELEN=`printf "%02x\n" ${#GITHUB_USER}`
-printf "%b" '\x0a' > username.encoded
-printf "%b" '\x'$NAMELEN >> username.encoded
-printf "%s" $GITHUB_USER >> username.encoded
-printf "%b" '\x12\x06' >> username.encoded
-printf "%s" 'github' >> username.encoded
-base64 username.encoded | sed 's/\=$//' > username.64
-rm username.encoded
 
 # Need to loop over this - to wait until it comes available
 
-while ! ocm create idp --cluster=$CLUSTER_ID --type openid --client-id  $CLUSTER_NAME --client-secret $CLUSTER_ID-$CLUSTER_ID --issuer-url $IDP_ISSUER_URL --email-claims email --name-claims fullName,name --username-claims fullName,preferred_username,email,name
+while ! ocm create idp --cluster=$CLUSTER_NAME --type htpasswd --name htpasswd --username ${ADMIN_USER} --password ${ADMIN_PASSWORD}
 do
     printf "${YELLOW}Waiting for cluster to become active...${CLEAR}\n"
     sleep 30
 done
 
-printf "${GREEN}Adding github user ${GITHUB_USER} as admin.${CLEAR}\n"
+printf "${GREEN}Adding user ${ADMIN_USER} as admin.${CLEAR}\n"
 
-ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=cluster-admins
-ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=dedicated-admins
-rm username.64
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=cluster-admins
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=dedicated-admins
 
 #-----DUMP STATE FILE----#
 LOGIN_URL=https://console-openshift-console.apps.$OSDGCP_CLUSTER_NAME.$CLUSTER_DOMAIN
-cat > $(pwd)/${OSDGCP_CLUSTER_NAME}.json <<EOF
+STATE_FILE=$(pwd)/${OSDGCP_CLUSTER_NAME}.json
+cat > ${STATE_FILE} <<EOF
 {
     "CLUSTER_NAME": "${OSDGCP_CLUSTER_NAME}",
     "CLUSTER_ID": "${CLUSTER_ID}",
     "REGION": "${GCLOUD_REGION}",
-    "OCM_URL": "${OCM_URL}",
+    "USERNAME": "${ADMIN_USER}",
+    "PASSWORD": "${ADMIN_PASSWORD}",
     "LOGIN_URL": "${LOGIN_URL}",
+    "OCM_URL": "${OCM_URL}",
     "PLATFORM": "OSD-GCP"
 }
 EOF
 
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDGCP_CLUSTER_NAME} created. \n"
-printf "State files saved for cleanup in $(pwd)/${OSDGCP_CLUSTER_NAME}.json and $(pwd)/${OSDGCP_CLUSTER_NAME}.yaml.${CLEAR}\n"
-
+printf "${GREEN}Console URL: ${LOGIN_URL}\n${CLEAR}"
+printf "${GREEN}Username: ${ADMIN_USER}\n${CLEAR}"
+printf "${GREEN}Password: *****\n${CLEAR}"
+printf "${GREEN}Full Password and username can be found in ${STATE_FILE}\n${CLEAR}"
+printf "${GREEN}To destroy this cluster run './destroy.sh ${STATE_FILE}'\n${CLEAR}"

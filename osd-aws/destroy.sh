@@ -16,13 +16,6 @@ if [ ! -f "$1" ]; then
     printf "$1 does not exist, exiting\n"
     exit 1
 fi
-YAML_DIR=`dirname $1`
-YAML_FILE=`basename $1 .json`
-IDP_YAML_FILENAME=$YAML_DIR/$YAML_FILE.yaml
-if [ ! -f "$IDP_YAML_FILENAME" ]; then
-    printf "$IDP_YAML_FILENAME does not exist, exiting\n"
-    exit 1
-fi
 
 CLUSTER_NAME=$(cat $1 | jq -r '.CLUSTER_NAME')
 CLUSTER_ID=$(cat $1 | jq -r '.CLUSTER_ID')
@@ -61,19 +54,11 @@ fi
 #----DELETE OCM-AWS CLUSTER----#
 printf "${BLUE}Deleting the OCM-AWS cluster named ${CLUSTER_NAME}.${CLEAR}\n"
 
-printf "${YELLOW}"
 ocm delete /api/clusters_mgmt/v1/clusters/$CLUSTER_ID
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to delete cluster ${CLUSTER_NAME}, exiting${CLEAR}\n"
     exit 1
 fi
-
-#----DELETE IDP CONFIGURATION ----#
-printf "${BLUE}Deleting the IDP configuration.${CLEAR}\n"
-
-oc login --token=$IDP_SERVICE_ACCOUNT_TOKEN --server=$IDP_ISSUER_LOGIN_SERVER
-oc delete -f $IDP_YAML_FILENAME
-oc logout
 
 printf "${CLEAR}"
 printf "${GREEN}Successfully cleaned up the cluster named ${CLUSTER_NAME}.${CLEAR}\n"

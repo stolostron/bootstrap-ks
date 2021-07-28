@@ -20,6 +20,9 @@ else
   USER=${USER:-"jenkins"}
 fi
 
+# Ensure ADMIN_USER/PASSWORD have values
+ADMIN_USER=${ADMIN_USER:-"Cluster-Admin"}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-"`head /dev/urandom | LC_CTYPE=C tr -dc A-Za-z0-9 | head -c 80 ; echo ''`"}
 
 SHORTNAME=$(echo $USER | head -c 7)
 
@@ -31,6 +34,7 @@ NAME_SUFFIX="odaw"
 AWS_REGION=${AWS_REGION:-"us-east-1"}
 AWS_NODE_COUNT=${AWS_NODE_COUNT:-"3"}
 AWS_MACHINE_TYPE=${AWS_MACHINE_TYPE:-"m5.xlarge"}
+
 # OCM_URL can be one of: 'production', 'staging', 'integration'
 OCM_URL=${OCM_URL:-"staging"}
 
@@ -83,9 +87,6 @@ fi
 #----CREATE CLUSTER----#
 OSDAWS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an OSD cluster on AWS named ${OSDAWS_CLUSTER_NAME}.${CLEAR}\n"
-printf "${YELLOW}"
-
-OPTIONAL_PARAMS=""
 
 ocm create cluster --ccs --aws-access-key-id $AWS_ACCESS_KEY_ID --aws-account-id $AWS_ACCOUNT_ID --aws-secret-access-key $AWS_SECRET_ACCESS_KEY --compute-nodes $AWS_NODE_COUNT --compute-machine-type $AWS_MACHINE_TYPE --region $AWS_REGION $OSDAWS_CLUSTER_NAME
 if [ "$?" -ne 0 ]; then
@@ -104,52 +105,39 @@ printf "${GREEN}Cluster ID: '${CLUSTER_ID}${CLEAR}'\n"
 CLUSTER_DOMAIN=`ocm get /api/clusters_mgmt/v1/clusters/$CLUSTER_ID | jq -r '.dns.base_domain'`
 printf "${GREEN}Cluster domain: '${CLUSTER_DOMAIN}${CLEAR}'\n"
 
-sed -e "s;__CLUSTER_NAME__;$CLUSTER_NAME;g" \
-    -e "s;__CLUSTER_ID__;$CLUSTER_ID;g" \
-    -e "s;__CLUSTER_DOMAIN__;$CLUSTER_DOMAIN;g" \
-                dex-idp-config.yaml.template \
-                > $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml
-
-oc login --token=$IDP_SERVICE_ACCOUNT_TOKEN --server=$IDP_ISSUER_LOGIN_SERVER
-oc apply -f $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml
-oc logout
-
 # Configure IDP and users
-NAMELEN=`printf "%02x\n" ${#GITHUB_USER}`
-printf "%b" '\x0a' > username.encoded
-printf "%b" '\x'$NAMELEN >> username.encoded
-printf "%s" $GITHUB_USER >> username.encoded
-printf "%b" '\x12\x06' >> username.encoded
-printf "%s" 'github' >> username.encoded
-base64 username.encoded | sed 's/\=$//' > username.64
-rm username.encoded
-
 # Need to loop over this - to wait until it comes available
 
-while ! ocm create idp --cluster=$CLUSTER_ID --type openid --client-id  $CLUSTER_NAME --client-secret $CLUSTER_ID-$CLUSTER_ID --issuer-url $IDP_ISSUER_URL --email-claims email --name-claims fullName,name --username-claims fullName,preferred_username,email,name
+while ! ocm create idp --cluster=$CLUSTER_NAME --type htpasswd --name htpasswd --username ${ADMIN_USER} --password ${ADMIN_PASSWORD}
 do
     printf "${YELLOW}Waiting for cluster to become active...${CLEAR}\n"
     sleep 30
 done
 
-printf "${GREEN}Adding github user ${GITHUB_USER} as admin.${CLEAR}\n"
+printf "${GREEN}Adding user ${ADMIN_USER} as admin.${CLEAR}\n"
 
-ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=cluster-admins
-ocm create user `cat username.64` --cluster=$CLUSTER_ID --group=dedicated-admins
-rm username.64
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=cluster-admins
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=dedicated-admins
 
 #-----DUMP STATE FILE----#
 LOGIN_URL=https://console-openshift-console.apps.$OSDAWS_CLUSTER_NAME.$CLUSTER_DOMAIN
+STATE_FILE=$(pwd)/${OSDAWS_CLUSTER_NAME}.json
 cat > $(pwd)/${OSDAWS_CLUSTER_NAME}.json <<EOF
 {
     "CLUSTER_NAME": "${OSDAWS_CLUSTER_NAME}",
     "CLUSTER_ID": "${CLUSTER_ID}",
     "REGION": "${AWS_REGION}",
-    "OCM_URL": "${OCM_URL}",
+    "USERNAME": "${ADMIN_USER}",
+    "PASSWORD": "${ADMIN_PASSWORD}",
     "LOGIN_URL": "${LOGIN_URL}",
+    "OCM_URL": "${OCM_URL}",
     "PLATFORM": "OSD-AWS"
 }
 EOF
 
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDAWS_CLUSTER_NAME} created. \n"
-printf "State files saved for cleanup in $(pwd)/${OSDAWS_CLUSTER_NAME}.json and $(pwd)/${OSDAWS_CLUSTER_NAME}.yaml.${CLEAR}\n"
+printf "${GREEN}Console URL: ${LOGIN_URL}\n${CLEAR}"
+printf "${GREEN}Username: ${ADMIN_USER}\n${CLEAR}"
+printf "${GREEN}Password: *****\n${CLEAR}"
+printf "${GREEN}Full Password and username can be found in ${STATE_FILE}\n${CLEAR}"
+printf "${GREEN}To destroy this cluster run './destroy.sh ${STATE_FILE}'\n${CLEAR}"
