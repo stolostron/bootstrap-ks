@@ -283,11 +283,11 @@ api_url=$(az aro show --name ${RESOURCE_NAME} -g ${RESOURCE_GROUP_NAME} --query 
 
 
 #-----DUMP STATE FILE, CREDS, AND PRINT SUCCESS----#
-jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg identity_provider "kube:admin" '. + {IDENTITY_PROVIDER: $identity_provider}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg identity_provider "kube:admin" '. + {IDENTITY_PROVIDER: $identity_provider}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
 cat > ${CREDS_FILE} <<EOF
 {
     "USERNAME": "${username}",

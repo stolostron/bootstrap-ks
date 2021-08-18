@@ -25,4 +25,6 @@ FROM quay.io/gurnbenibm/cloudclisbase:latest
 # Add bootstrap-ks modules
 ADD aro/ aro/
 ADD aks/ aks/
+ADD eks/ eks/
+ADD rosa/ rosa
 ADD container-utils/provision_wrapper.sh provision_wrapper.sh

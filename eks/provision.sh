@@ -30,24 +30,41 @@ NAME_SUFFIX="eks"
 # Default to us-east-1
 EKS_REGION=${EKS_REGION:-"us-east-1"}
 EKS_NODE_COUNT=${EKS_NODE_COUNT:-"3"}
+
 # Optional - defaults is to auto-select
 EKS_ZONES=${EKS_ZONES:-""}
+
+# Writable directory to hold results and temporary files for containerized application - default to the current directory
+OUTPUT_DEST=${OUTPUT_DEST:-PWD}
 
 
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
 
+if [ -z "$AWS_ACCESS_KEY_ID" ]; then
+    printf "${RED}AWS_ACCESS_KEY_ID env var not set. Flagging for exit.${CLEAR}\n"
+    missing=1
+fi
+
+if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+    printf "${RED}AWS_SECRET_ACCESS_KEY env var not set. Flagging for exit.${CLEAR}\n"
+    missing=1
+fi
+
 if [ "$missing" -ne 0 ]; then
     exit $missing
 fi
 
+
+#----GENERATE RESOURCE NAME----#
 if [ ! -z "$CLUSTER_NAME" ]; then
-    RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
+    RESOURCE_NAME="$CLUSTER_NAME"
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
+STATE_FILE=${OUTPUT_DEST}/${RESOURCE_NAME}.json
 
 
 #----VERIFY Amazon EKS CLI----#
@@ -57,10 +74,8 @@ if [ -z "$(which eksctl)" ]; then
 fi
 
 
-
-
 #----CREATE EKS CLUSTER----#
-EKS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
+EKS_CLUSTER_NAME="${RESOURCE_NAME}"
 printf "${BLUE}Creating an EKS cluster named ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
 
@@ -69,17 +84,23 @@ if [ ! -z "$EKS_ZONES" ]; then
   OPTIONAL_PARAMS=$"${OPTIONAL_PARAMS} --zones ${EKS_ZONES} "
 fi
 
-eksctl create cluster --name "${EKS_CLUSTER_NAME}" --nodes "${EKS_NODE_COUNT}" --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig" ${OPTIONAL_PARAMS}
+eksctl create cluster \
+  --name "${EKS_CLUSTER_NAME}" \
+  --nodes "${EKS_NODE_COUNT}" \
+  --region "${EKS_REGION}" \
+  --kubeconfig "${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig" ${OPTIONAL_PARAMS}
+
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision EKS cluster. See error above. Exiting${CLEAR}\n"
     exit 1
 fi
+
 printf "${GREEN}Successfully provisioned EKS cluster ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 
 
 #----Make KUBECONFIG that is useable from anywhere ----#
 export KUBECONFIG_SAVED=$KUBECONFIG
-export KUBECONFIG=$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig
+export KUBECONFIG=${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig
 
 # Check for which base64 command we have available so we can use the right option
 echo | base64 -w 0 > /dev/null 2>&1
@@ -116,7 +137,7 @@ EOF
 
 sleep 1
 
-cat > "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable" <<EOF
+cat > "${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig.portable" <<EOF
 apiVersion: v1
 clusters:
 - cluster:
@@ -139,16 +160,15 @@ users:
 EOF
 
 # take portable kubeconfig and replace original kubeconfig
-cp $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig
-rm $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig.portable
+cp ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig.portable ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig
+rm ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig.portable
 
 # Set KUBECONFIG to what it used to be
 export KUBECONFIG=$KUBECONFIG_SAVED
 
 
-
 #-----DUMP STATE FILE----#
-cat > $(pwd)/${EKS_CLUSTER_NAME}.json <<EOF
+cat > ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.json <<EOF
 {
     "CLUSTER_NAME": "${EKS_CLUSTER_NAME}",
     "REGION": "${EKS_REGION}",
@@ -158,10 +178,9 @@ EOF
 
 
 #----EXTRACTING KUBECONFIG----#
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${EKS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
+printf "${GREEN}You can find your kubeconfig file for this cluster in ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
 printf "${CLEAR}"
 
 
-
 printf "${GREEN}EKS cluster provision successful.  Cluster named ${EKS_CLUSTER_NAME} created. \n"
-printf "State file saved for cleanup in $(pwd)/${EKS_CLUSTER_NAME}.json${CLEAR}\n"
+printf "State file saved for cleanup in ${OUTPUT_DEST}/${EKS_CLUSTER_NAME}.json${CLEAR}\n"

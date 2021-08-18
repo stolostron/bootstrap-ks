@@ -24,8 +24,8 @@ set -e
 # Check for vendored or global 'rosa' cli
 if [[ $(which rosa) ]]; then
     ROSA=$(which rosa)
-elif [[ -x $PWD/vendor/rosa ]]; then
-    ROSA=$PWD/vendor/rosa
+elif [[ -x ${OUTPUT_DEST}/vendor/rosa ]]; then
+    ROSA=${OUTPUT_DEST}/vendor/rosa
 else
     printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
     exit 1
@@ -62,6 +62,9 @@ AWS_WORKER_COUNT=${AWS_WORKER_COUNT:-"3"}
 # Default to "stable"
 CHANNEL_GROUP=${CHANNEL_GROUP:-"stable"}
 
+# Writable directory to hold results and temporary files for containerized application - default to the current directory
+OUTPUT_DEST=${OUTPUT_DEST:-PWD}
+
 
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
@@ -94,7 +97,7 @@ if [ ! -z "$CLUSTER_NAME" ]; then
 else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
-STATE_FILE=$PWD/${RESOURCE_NAME}.json
+STATE_FILE=${OUTPUT_DEST}/${RESOURCE_NAME}.json
 
 
 #----LOG IN----#
