@@ -26,6 +26,9 @@ else
   USER=${USER:-"jenkins"}
 fi
 
+# Ensure ADMIN_USER/PASSWORD have values
+ADMIN_USER=${ADMIN_USER:-"Cluster-Admin"}
+ADMIN_PASSWORD=${ADMIN_PASSWORD:-"`head /dev/urandom | LC_CTYPE=C tr -dc A-Za-z0-9 | head -c 80 ; echo ''`"}
 
 SHORTNAME=$(echo $USER | head -c 7)
 
@@ -37,6 +40,7 @@ NAME_SUFFIX="odaw"
 AWS_REGION=${AWS_REGION:-"us-east-1"}
 AWS_NODE_COUNT=${AWS_NODE_COUNT:-"3"}
 AWS_MACHINE_TYPE=${AWS_MACHINE_TYPE:-"m5.xlarge"}
+
 # OCM_URL can be one of: 'production', 'staging', 'integration'
 OCM_URL=${OCM_URL:-"staging"}
 
@@ -89,9 +93,6 @@ fi
 #----CREATE CLUSTER----#
 OSDAWS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an OSD cluster on AWS named ${OSDAWS_CLUSTER_NAME}.${CLEAR}\n"
-printf "${YELLOW}"
-
-OPTIONAL_PARAMS=""
 
 ocm create cluster --ccs --aws-access-key-id $AWS_ACCESS_KEY_ID --aws-account-id $AWS_ACCOUNT_ID --aws-secret-access-key $AWS_SECRET_ACCESS_KEY --compute-nodes $AWS_NODE_COUNT --compute-machine-type $AWS_MACHINE_TYPE --region $AWS_REGION $OSDAWS_CLUSTER_NAME
 if [ "$?" -ne 0 ]; then
@@ -100,95 +101,49 @@ if [ "$?" -ne 0 ]; then
 fi
 printf "${GREEN}Successfully provisioned cluster ${OSDAWS_CLUSTER_NAME}.${CLEAR}\n"
 
-CLUSTER_ID=`ocm list clusters --parameter search="name like '${OSDAWS_CLUSTER_NAME}'" --no-headers | awk  '{ print $1 }'`
+CLUSTER_NAME=$OSDAWS_CLUSTER_NAME
 
-#----Make KUBECONFIG that is useable from anywhere ----#
-export KUBECONFIG_SAVED=$KUBECONFIG
-export KUBECONFIG=$(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig
+printf "${GREEN}Cluster name: '${CLUSTER_NAME}${CLEAR}'\n"
 
-# Check for which base64 command we have available so we can use the right option
-echo | base64 -w 0 > /dev/null 2>&1
-if [ $? -eq 0 ]; then
-  # GNU coreutils base64, '-w' supported
-  BASE64_OPTION=" -w 0"
-else
-  # Openssl base64, no wrapping by default
-  BASE64_OPTION=" "
-fi
+CLUSTER_ID=`ocm list clusters --parameter search="name like '${CLUSTER_NAME}'" --no-headers | awk  '{ print $1 }'`
+printf "${GREEN}Cluster ID: '${CLUSTER_ID}${CLEAR}'\n"
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: cluster-admin
-  namespace: kube-system
-EOF
+CLUSTER_DOMAIN=`ocm get /api/clusters_mgmt/v1/clusters/$CLUSTER_ID | jq -r '.dns.base_domain'`
+printf "${GREEN}Cluster domain: '${CLUSTER_DOMAIN}${CLEAR}'\n"
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kube-system-cluster-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: cluster-admin
-  namespace: kube-system
-EOF
+# Configure IDP and users
+# Need to loop over this - to wait until it comes available
 
-sleep 1
+while ! ocm create idp --cluster=$CLUSTER_NAME --type htpasswd --name htpasswd --username ${ADMIN_USER} --password ${ADMIN_PASSWORD}
+do
+    printf "${YELLOW}Waiting for cluster to become active...${CLEAR}\n"
+    sleep 30
+done
 
-cat > "$(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig.portable" <<EOF
-apiVersion: v1
-clusters:
-- cluster:
-    server: $(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-    insecure-skip-tls-verify: true
-  name: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-contexts:
-- context:
-    cluster: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-    namespace: default
-    user: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-  name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-current-context: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-kind: Config
-preferences: {}
-users:
-- name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-  user:
-    token: $(kubectl get $(kubectl get secret -n kube-system -o name | grep cluster-admin-token | head -n 1) -n kube-system -o jsonpath={.data.token} | base64 -d ${BASE64_OPTION})
-EOF
+printf "${GREEN}Adding user ${ADMIN_USER} as admin.${CLEAR}\n"
 
-# take portable kubeconfig and replace original kubeconfig
-cp $(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig.portable $(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig
-rm $(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig.portable
-
-# Set KUBECONFIG to what it used to be
-export KUBECONFIG=$KUBECONFIG_SAVED
-
-
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=cluster-admins
+ocm create user ${ADMIN_USER} --cluster=$CLUSTER_ID --group=dedicated-admins
 
 #-----DUMP STATE FILE----#
+LOGIN_URL=https://console-openshift-console.apps.$OSDAWS_CLUSTER_NAME.$CLUSTER_DOMAIN
+STATE_FILE=$(pwd)/${OSDAWS_CLUSTER_NAME}.json
 cat > $(pwd)/${OSDAWS_CLUSTER_NAME}.json <<EOF
 {
     "CLUSTER_NAME": "${OSDAWS_CLUSTER_NAME}",
     "CLUSTER_ID": "${CLUSTER_ID}",
     "REGION": "${AWS_REGION}",
-    "URL": "${OCM_URL}",
+    "USERNAME": "${ADMIN_USER}",
+    "PASSWORD": "${ADMIN_PASSWORD}",
+    "LOGIN_URL": "${LOGIN_URL}",
+    "OCM_URL": "${OCM_URL}",
     "PLATFORM": "OSD-AWS"
 }
 EOF
 
-
-#----EXTRACTING KUBECONFIG----#
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${OSDAWS_CLUSTER_NAME}.kubeconfig\n${CLEAR}"
-printf "${CLEAR}"
-
-
-
 printf "${GREEN}Cluster provision successful.  Cluster named ${OSDAWS_CLUSTER_NAME} created. \n"
-printf "State file saved for cleanup in $(pwd)/${OSDAWS_CLUSTER_NAME}.json${CLEAR}\n"
+printf "${GREEN}Console URL: ${LOGIN_URL}\n${CLEAR}"
+printf "${GREEN}Username: ${ADMIN_USER}\n${CLEAR}"
+printf "${GREEN}Password: *****\n${CLEAR}"
+printf "${GREEN}Full Password and username can be found in ${STATE_FILE}\n${CLEAR}"
+printf "${GREEN}To destroy this cluster run './destroy.sh ${STATE_FILE}'\n${CLEAR}"

@@ -30,7 +30,7 @@ else
     printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
     exit 1
 fi
-printf "${BLUE}Using 'rosa' CLI installed at ${ROSA}${CLEAR}\n"
+printf "${BLUE}Using 'rosa' CLI version $(${ROSA} version) installed at ${ROSA}${CLEAR}\n"
 
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
@@ -48,7 +48,7 @@ SHORTNAME=$(echo $USER | head -c 8)
 RESOURCE_NAME="$SHORTNAME-$RANDOM_IDENTIFIER"
 
 # Default to us-east-1
-AWS_REGION=${AWS_REGION:-"us-east-1"}
+export AWS_REGION=${AWS_REGION:-"us-east-1"}
 
 # Default to latest (empty)
 OCP_VERSION=${OCP_VERSION:-""}
