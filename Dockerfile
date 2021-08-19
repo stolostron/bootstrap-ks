@@ -20,7 +20,10 @@
 #-----END OLD-----#
 
 # Pull my own homemade base image that uses the above old code.
-FROM quay.io/gurnbenibm/cloudclisbase:latest
+FROM quay.io/gurnbenibm/cloudclisbase:dev
+
+ENV HOME=/bootstrap-ks
+WORKDIR $HOME
 
 # Add bootstrap-ks modules
 ADD aro/ aro/

@@ -21,12 +21,15 @@ spec:
       - name: bootstrap
         image: quay.io/gurnbenibm/bootstrapks:latest
         command: ["/bin/bash", "-c", "./provision_wrapper.sh"]
+        workingDir: /bootstrap-ks
         envFrom:
         - secretRef:
             name: bootstrap-ks-config
         - secretRef:
             name: bootstrap-ks-creds
         env:
+        - name: HOME
+          value: /home/tmp
         - name: OCP_PULL_SECRET_FILE
           value: /opt/pull-secret.txt
         - name: OUTPUT_DEST
