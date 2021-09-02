@@ -20,7 +20,7 @@
 #-----END OLD-----#
 
 # Pull my own homemade base image that uses the above old code.
-FROM quay.io/gurnbenibm/cloudclisbase:dev
+FROM quay.io/gurnbenibm/cloudclisbase:latest
 
 ENV HOME=/bootstrap-ks
 WORKDIR $HOME
