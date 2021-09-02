@@ -17,8 +17,8 @@ oc create secret generic bootstrap-ks-aks-creds \
 # Create a secret for ROSA
 oc create secret generic bootstrap-ks-rosa-creds \
     -n bootstrap-ks \
-    --from-literal=AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-    --from-literal=AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    --from-literal=AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_ROSA \
+    --from-literal=AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_ROSA \
     --from-literal=ROSA_TOKEN=$ROSA_TOKEN \
     --from-literal=TARGET_KS=rosa;
 # Create a secret for ROSA
