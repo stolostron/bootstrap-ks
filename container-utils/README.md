@@ -1,6 +1,6 @@
 # Containerized other-ks Provisioning
 
-**NOTE: currently only aro is supported as a platform**
+**NOTE: currently only ARO, AKS, ROSA, and EKS are supported**
 
 ## Building the Image
 
@@ -18,10 +18,24 @@ Before you can provision a cluster via a kuberentes job, you need to do some set
 2. Create a namespace called `bootstrap-ks` on your cluster - this is where the jobs will operate.  You can use any namespace you desire, but if you do, you'll need to change all namespace references in `prereqs.yaml`, `create_job_secrets.sh`, and `kustomization.yaml`.  
 3. Set the folowing environment variables:
 ```
+## For OCP Clusters ARO
 OCP_PULL_SECRET_FILE - the path to your ocp pull_secret.txt file acquired from cloud.redhat.com
+
+## For AKS and ARO
 AZURE_PASS - your Azure console password - this requirement will eventually be optionally substituted with service principle details
 AZURE_USER - yoru Azure console username - this requirement will eventually be optionally substituted with service principle details
 AZURE_SUBSCRIPTION_ID - the azure subscription id you wish to use
+
+## For ROSA
+ROSA_TOKEN - the token obtained from https://cloud.redhat.com/openshift/token/rosa
+AWS_ACCESS_KEY_ID_ROSA - AWS Access Key ID for use with ROSA
+AWS_SECRET_ACCESS_KEY_ROSA  - AWS Secret Access Key for use with ROSA
+
+##  For EKS
+AWS_ACCESS_KEY_ID - AWS Access Key ID for use with EKS
+AWS_SECRET_ACCESS_KEY - AWS Secret Access Key for use with EKS
+
+## Optional variables not included in this list for configuration of clusters to be provisioned.  Find those in the platforms' README!
 ```
 4. Run `./create_job_secrets.sh` to create two secrets holding the above env vars that will be mounted and used in the provision.  
 5. `cp bootstrap-ks.config.secret.example bootstrap-ks.config.secret` and edit `bootstrap-ks.config.secret` to customize your cluster provision as desired.  **NOTE:** Be sure to set `OPERATION=CREATE` to provision.  

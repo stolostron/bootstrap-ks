@@ -22,7 +22,12 @@
 # Pull my own homemade base image that uses the above old code.
 FROM quay.io/gurnbenibm/cloudclisbase:latest
 
+ENV HOME=/bootstrap-ks
+WORKDIR $HOME
+
 # Add bootstrap-ks modules
 ADD aro/ aro/
 ADD aks/ aks/
+ADD eks/ eks/
+ADD rosa/ rosa/
 ADD container-utils/provision_wrapper.sh provision_wrapper.sh

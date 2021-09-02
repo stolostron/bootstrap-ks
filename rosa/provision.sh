@@ -9,10 +9,10 @@ RED='\e[31m'
 YELLOW='\e[33m'
 CLEAR='\e[39m'
 if [[ "$COLOR" == "False" || "$COLOR" == "false" ]]; then
-    BLUE='\e[39m'
-    GREEN='\e[39m'
-    RED='\e[39m'
-    YELLOW='\e[39m'
+    BLUE=''
+    GREEN=''
+    RED=''
+    YELLOW=''
 fi
 
 # Handle MacOS being incapable of tr, grep, and others
@@ -24,13 +24,13 @@ set -e
 # Check for vendored or global 'rosa' cli
 if [[ $(which rosa) ]]; then
     ROSA=$(which rosa)
-elif [[ -x $PWD/vendor/rosa ]]; then
-    ROSA=$PWD/vendor/rosa
+elif [[ -x ${OUTPUT_DEST}/vendor/rosa ]]; then
+    ROSA=${OUTPUT_DEST}/vendor/rosa
 else
     printf "${RED}'rosa' CLI not found globally or vendored, run install.sh to set up dependencies.${CLEAR}\n"
     exit 1
 fi
-printf "${BLUE}Using 'rosa' CLI installed at ${ROSA}${CLEAR}\n"
+printf "${BLUE}Using 'rosa' CLI version $(${ROSA} version) installed at ${ROSA}${CLEAR}\n"
 
 #----DEFAULTS----#
 # Generate a 5-digit random cluster identifier for resource tagging purposes
@@ -48,7 +48,7 @@ SHORTNAME=$(echo $USER | head -c 8)
 RESOURCE_NAME="$SHORTNAME-$RANDOM_IDENTIFIER"
 
 # Default to us-east-1
-AWS_REGION=${AWS_REGION:-"us-east-1"}
+export AWS_REGION=${AWS_REGION:-"us-east-1"}
 
 # Default to latest (empty)
 OCP_VERSION=${OCP_VERSION:-""}
@@ -61,6 +61,9 @@ AWS_WORKER_COUNT=${AWS_WORKER_COUNT:-"3"}
 
 # Default to "stable"
 CHANNEL_GROUP=${CHANNEL_GROUP:-"stable"}
+
+# Writable directory to hold results and temporary files for containerized application - default to the current directory
+OUTPUT_DEST=${OUTPUT_DEST:-PWD}
 
 
 #----VALIDATE ENV VARS----#
@@ -94,7 +97,7 @@ if [ ! -z "$CLUSTER_NAME" ]; then
 else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
-STATE_FILE=$PWD/${RESOURCE_NAME}.json
+STATE_FILE=${OUTPUT_DEST}/${RESOURCE_NAME}.json
 
 
 #----LOG IN----#
@@ -134,12 +137,12 @@ printf "${BLUE}Writing inital state before starting provision.${CLEAR}\n"
 if [[ ! -f ${STATE_FILE} ]]; then
     echo "{}" > ${STATE_FILE}
 fi
-jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg region "${AWS_REGION}" '. + {REGION: $region}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg platform "rosa" '. + {PLATFORM: $platform}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg cluster_name "${RESOURCE_NAME}" '. + {CLUSTER_NAME: $cluster_name}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg region "${AWS_REGION}" '. + {REGION: $region}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg platform "rosa" '. + {PLATFORM: $platform}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
 # Load account ID and log in JSON to ensure that cleanup is successful if provision fails
 aws_account_id=$(${ROSA} whoami | grep "AWS Account ID:" | sed -n "s/AWS Account ID:[ ]*\(.*\)/\1/p")
-jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
 
 #-----PROVISION CLUSTER AND WATCH LOGS-----#
 printf "${BLUE}Provisioning the ROSA cluster ${RESOURCE_NAME} in ${AWS_REGION}.${CLEAR}\n"
@@ -166,19 +169,19 @@ aws_account_id=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "AWS
 
 #-----CONFIGURE AUTH-----#
 printf "${BLUE}Creating an admin user on ${RESOURCE_NAME}.${CLEAR}\n"
-${ROSA} create admin --cluster=${RESOURCE_NAME} > .tmp_creds
-username=$(cat .tmp_creds | grep "username" | sed -n "s/.*--username[ ]*\([^ ]*\)[ ]*.*/\1/p")
-password=$(cat .tmp_creds | grep "password" | sed -n "s/.*--password[ ]*\([^ ]*\)[ ]*.*/\1/p")
-rm -f .tmp_creds
+${ROSA} create admin --cluster=${RESOURCE_NAME} > ${OUTPUT_DEST}/.tmp_creds
+username=$(cat ${OUTPUT_DEST}/.tmp_creds | grep "username" | sed -n "s/.*--username[ ]*\([^ ]*\)[ ]*.*/\1/p")
+password=$(cat ${OUTPUT_DEST}/.tmp_creds | grep "password" | sed -n "s/.*--password[ ]*\([^ ]*\)[ ]*.*/\1/p")
+rm -f ${OUTPUT_DEST}/.tmp_creds
 
 
 #-----DUMP STATE FILE AND PRINT SUCCESS----#
-jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
-jq --arg identity_provider "Cluster-Admin" '. + {IDENTITY_PROVIDER: $identity_provider}' ${STATE_FILE} > .tmp; mv .tmp ${STATE_FILE};
+jq --arg console_url "${console_url}" '. + {CONSOLE_URL: $console_url}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg api_url "${api_url}" '. + {API_URL: $api_url}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg aws_account_id "${aws_account_id}" '. + {AWS_ACCOUNT_ID: $aws_account_id}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg username "${username}" '. + {USERNAME: $username}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg password "${password}" '. + {PASSWORD: $password}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
+jq --arg identity_provider "Cluster-Admin" '. + {IDENTITY_PROVIDER: $identity_provider}' ${STATE_FILE} > ${OUTPUT_DEST}/.tmp; mv ${OUTPUT_DEST}/.tmp ${STATE_FILE};
 printf "${GREEN}ROSA cluster named ${RESOURCE_NAME} provisioned successfully.\n${CLEAR}"
 printf "${GREEN}Console URL: ${console_url}\n${CLEAR}"
 printf "${GREEN}API URL: ${api_url}\n${CLEAR}"

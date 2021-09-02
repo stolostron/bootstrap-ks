@@ -63,6 +63,8 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azu
     elif [[ "$(which apk)" ]]; then
         # Alpine
         printf "${BLUE}Detected Alpine-based Distro - attempting install with apk.${CLEAR}\n"
+        apk add linux-headers alpine-sdk jq libc6-compat findutils
+        apk add --no-cache python3 py3-pip
         apk add jq
         apk del python2
         apk update

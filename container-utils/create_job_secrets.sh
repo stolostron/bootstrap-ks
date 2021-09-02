@@ -14,3 +14,16 @@ oc create secret generic bootstrap-ks-aks-creds \
     --from-literal=AZURE_USER=$AZURE_USER \
     --from-literal=AZURE_SUBSCRIPTION_ID=$AZURE_SUBSCRIPTION_ID \
     --from-literal=TARGET_KS=aks;
+# Create a secret for ROSA
+oc create secret generic bootstrap-ks-rosa-creds \
+    -n bootstrap-ks \
+    --from-literal=AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID_ROSA \
+    --from-literal=AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY_ROSA \
+    --from-literal=ROSA_TOKEN=$ROSA_TOKEN \
+    --from-literal=TARGET_KS=rosa;
+# Create a secret for ROSA
+oc create secret generic bootstrap-ks-eks-creds \
+    -n bootstrap-ks \
+    --from-literal=AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+    --from-literal=AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+    --from-literal=TARGET_KS=eks;

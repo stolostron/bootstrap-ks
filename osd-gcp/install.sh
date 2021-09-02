@@ -6,6 +6,12 @@ GREEN='\e[32m'
 RED='\e[31m'
 YELLOW='\e[33m'
 CLEAR='\e[39m'
+if [[ "$COLOR" == "False" || "$COLOR" == "false" ]]; then
+    BLUE='\e[39m'
+    GREEN='\e[39m'
+    RED='\e[39m'
+    YELLOW='\e[39m'
+fi
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
@@ -26,7 +32,7 @@ if [[ "$OS" == "darwin" ]]; then
     fi
 
     if [ -z "$(which ocm)" ]; then
-        curl -Lo /usr/local/bin/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.51/ocm-$OS-amd64
+        curl -Lo /usr/local/bin/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.54/ocm-$OS-amd64
         chmod +x /usr/local/bin/ocm
         printf "${GREEN}ocm version `ocm version` installed${CLEAR}\n"
     else
@@ -47,7 +53,7 @@ else
     fi
 
     if [ -z "$(which ocm)" ]; then
-        curl -Lo /usr/local/bin/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.51/ocm-$OS-amd64
+        curl -Lo /usr/local/bin/ocm https://github.com/openshift-online/ocm-cli/releases/download/v0.1.54/ocm-$OS-amd64
         chmod +x /usr/local/bin/ocm
         printf "${GREEN}ocm version `ocm version` installed${CLEAR}\n"
     else

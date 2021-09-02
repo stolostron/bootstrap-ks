@@ -6,6 +6,12 @@ GREEN='\e[32m'
 RED='\e[31m'
 YELLOW='\e[33m'
 CLEAR='\e[39m'
+if [[ "$COLOR" == "False" || "$COLOR" == "false" ]]; then
+    BLUE='\e[39m'
+    GREEN='\e[39m'
+    RED='\e[39m'
+    YELLOW='\e[39m'
+fi
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 
