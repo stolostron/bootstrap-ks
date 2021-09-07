@@ -24,6 +24,7 @@ if [ ! -f "$1" ]; then
 fi
 CLUSTER_NAME=$(cat $1 | jq -r '.CLUSTER_NAME')
 REGION=$(cat $1 | jq -r '.REGION')
+GCLOUD_CREDS_FILE=${GCLOUD_CREDS_FILE:-"$HOME/.gcp/osServiceAccount.json"}
 
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing

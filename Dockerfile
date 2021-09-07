@@ -19,15 +19,27 @@
 #     chmod +x kubectl && mv kubectl /usr/local/bin/kubectl && rm openshift-client-linux.tar.gz
 #-----END OLD-----#
 
+# FROM gcr.io/google.com/cloudsdktool/cloud-sdk as cloud-sdk
+
 # Pull my own homemade base image that uses the above old code.
 FROM quay.io/gurnbenibm/cloudclisbase:latest
 
 ENV HOME=/bootstrap-ks
 WORKDIR $HOME
 
+RUN microdnf install python3 && \
+    pip3 install google-cloud
+
+ADD gke/deploy/google-cloud-sdk.repo /etc/yum.repos.d/
+RUN microdnf update -y && \
+    microdnf install google-cloud-sdk google-cloud-sdk-app-engine-python \
+    google-cloud-sdk-app-engine-python-extras
+
 # Add bootstrap-ks modules
 ADD aro/ aro/
 ADD aks/ aks/
 ADD eks/ eks/
 ADD rosa/ rosa/
+ADD gke/ gke/
 ADD container-utils/provision_wrapper.sh provision_wrapper.sh
+

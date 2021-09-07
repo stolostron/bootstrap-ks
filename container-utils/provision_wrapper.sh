@@ -2,10 +2,10 @@
 
 # provision_wrapper.sh
 #   This file wraps a call to the provision.sh in the target other-ks platform
-#       specifically for bootstrap-ks in a containerized form.  
-#   This is the entrypoint for containerized bootstrap-ks.  
+#       specifically for bootstrap-ks in a containerized form.
+#   This is the entrypoint for containerized bootstrap-ks.
 #   This script also handles the creation of a kubernetes secret containing data
-#       on the provisioned cluster.  
+#       on the provisioned cluster.
 #
 
 OPERATION=$(echo $OPERATION | tr '[:lower:]' '[:upper:]')
@@ -35,6 +35,9 @@ if [[ "$OPERATION" == "DESTROY" ]]; then
     elif [[ "$TARGET_KS" == "eks" ]]; then
         echo "#### Destroying ${CLUSTER_NAME} on EKS"
         pushd eks
+    elif [[ "$TARGET_KS" == "gke" ]]; then
+        echo "#### Destroying ${CLUSTER_NAME} on GKE"
+        pushd gke
         mkdir ${OUTPUT_DEST}/${CLUSTER_NAME}
         oc extract secret/${CLUSTER_NAME} --keys=json --to=${OUTPUT_DEST}/${CLUSTER_NAME}
         ./destroy.sh ${OUTPUT_DEST}/${CLUSTER_NAME}/json
@@ -102,13 +105,18 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
         STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
         KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
         pushd eks
+    elif [[ "$TARGET_KS" == "gke" ]]; then
+        echo "#### Provisioning ${CLUSTER_NAME} on GKE"
+        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
+        KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
+        pushd gke
         ./provision.sh \
             && oc create secret generic ${CLUSTER_NAME} \
                 --from-file=json=${STATE_FILE} \
                 --from-file=kubeconfig=${KUBECONFIG_FILE} \
-                --from-literal=cloud_platform=`cat ${STATE_FILE} | jq -r '.PLATFORM'` \
                 --from-literal=cluster_name=`cat ${STATE_FILE} | jq -r '.CLUSTER_NAME'` \
-                --from-literal=region=`cat ${STATE_FILE} | jq -r '.REGION'`;
+                --from-literal=region=`cat ${STATE_FILE} | jq -r '.REGION'` \
+                --from-literal=cloud_platform=`cat ${STATE_FILE} | jq -r '.PLATFORM'`;
         popd
     else
         echo "Platform ${TARGET} currently unsupported via image/kubernetes job.  Exiting"
