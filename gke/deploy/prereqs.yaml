@@ -31,3 +31,67 @@ subjects:
 - kind: ServiceAccount
   name: bootstrap-ks-service-account
   namespace: bootstrap-ks
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bootstrap-ks-service-account-clusterrole
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - "cluster.open-cluster-management.io"
+  resources:
+  - managedclusters
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - "agent.open-cluster-management.io"
+  resources:
+  - klusterletaddonconfigs
+  verbs:
+  - create
+  - get
+- apiGroups:
+  - "register.open-cluster-management.io"
+  resources:
+  - managedclusters/accept
+  verbs:
+  - create
+  - update
+  - patch
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclustersets/join
+  resourceNames:
+  - all-clusters
+  verbs:
+  - get
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: bootstrap-ks-service-account-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bootstrap-ks-service-account-clusterrole
+subjects:
+- kind: ServiceAccount
+  name: bootstrap-ks-service-account
+  namespace: bootstrap-ks
+---
+apiVersion: cluster.open-cluster-management.io/v1alpha1
+kind: ManagedClusterSet
+metadata:
+  name: all-clusters
+spec: {}

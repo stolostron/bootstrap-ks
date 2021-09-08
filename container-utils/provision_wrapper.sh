@@ -117,6 +117,11 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
                 --from-literal=cluster_name=`cat ${STATE_FILE} | jq -r '.CLUSTER_NAME'` \
                 --from-literal=region=`cat ${STATE_FILE} | jq -r '.REGION'` \
                 --from-literal=cloud_platform=`cat ${STATE_FILE} | jq -r '.PLATFORM'`;
+        #cm attach cluster --cluster ${CLUSTER_NAME} --cluster-kubeconfig ${KUBECONFIG_FILE}
+        popd
+        # Requires ${CLUSTER_NAME} and ${KUBECONFIG_FILE} to be defined
+        pushd import-cluster
+        ./import.sh
         popd
     else
         echo "Platform ${TARGET} currently unsupported via image/kubernetes job.  Exiting"

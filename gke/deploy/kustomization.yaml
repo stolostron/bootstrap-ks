@@ -1,8 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-
-
 # Disable random hash suffix
 generatorOptions:
   disableNameSuffixHash: true
@@ -18,10 +16,11 @@ images:
 
 # list of Resource Config to be Applied
 resources:
-  - prereqs.yaml
+  # Apply separately to reuse ServiceAccount, Role/Bindings across Job runs
+  # - prereqs.yaml
   - bootstrap-ks.job.yaml
 
-namePrefix: gke-cluster-
+namePrefix: gke-cluster5-
 secretGenerator:
 - name: bootstrap-ks-creds
   env: bootstrap-ks-creds.secret
