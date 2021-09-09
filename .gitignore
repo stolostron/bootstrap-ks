@@ -5,3 +5,4 @@ bin/
 *.secret
 *-credentials.json
 pull-secret.txt
+*.kubeconfig

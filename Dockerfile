@@ -30,7 +30,7 @@ WORKDIR $HOME
 RUN microdnf install python3 && \
     pip3 install google-cloud
 
-ADD gke/deploy/google-cloud-sdk.repo /etc/yum.repos.d/
+ADD gke/files/google-cloud-sdk.repo /etc/yum.repos.d/
 RUN microdnf update -y && \
     microdnf install google-cloud-sdk google-cloud-sdk-app-engine-python \
     google-cloud-sdk-app-engine-python-extras

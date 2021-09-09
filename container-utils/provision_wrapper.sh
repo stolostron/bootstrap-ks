@@ -10,6 +10,10 @@
 
 OPERATION=$(echo $OPERATION | tr '[:lower:]' '[:upper:]')
 
+export STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
+export KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
+
+
 if [[ "$OPERATION" == "DESTROY" ]]; then
     if [[ "$TARGET_KS" == "aro" ]]; then
         echo "#### Destroying ${CLUSTER_NAME} on ARO"
@@ -33,8 +37,11 @@ if [[ "$OPERATION" == "DESTROY" ]]; then
         ./destroy.sh ${OUTPUT_DEST}/${CLUSTER_NAME}/json
         popd
     elif [[ "$TARGET_KS" == "eks" ]]; then
-        echo "#### Destroying ${CLUSTER_NAME} on EKS"
         pushd eks
+        mkdir ${OUTPUT_DEST}/${CLUSTER_NAME}
+        oc extract secret/${CLUSTER_NAME} --keys=json --to=${OUTPUT_DEST}/${CLUSTER_NAME}
+        ./destroy.sh ${OUTPUT_DEST}/${CLUSTER_NAME}/json
+        popd
     elif [[ "$TARGET_KS" == "gke" ]]; then
         echo "#### Destroying ${CLUSTER_NAME} on GKE"
         pushd gke
@@ -42,6 +49,7 @@ if [[ "$OPERATION" == "DESTROY" ]]; then
         oc extract secret/${CLUSTER_NAME} --keys=json --to=${OUTPUT_DEST}/${CLUSTER_NAME}
         ./destroy.sh ${OUTPUT_DEST}/${CLUSTER_NAME}/json
         popd
+        oc delete managedcluster ${CLUSTER_NAME}
     else
         echo "Platform ${TARGET} currently unsupported via image/kubernetes job.  Exiting"
         exit 0
@@ -49,7 +57,6 @@ if [[ "$OPERATION" == "DESTROY" ]]; then
 elif [[ "$OPERATION" == "CREATE" ]]; then
     if [[ "$TARGET_KS" == "aro" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on ARO"
-        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
         pushd aro
         ./provision.sh \
             && oc create secret generic ${CLUSTER_NAME} \
@@ -69,8 +76,6 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
         popd
     elif [[ "$TARGET_KS" == "aks" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on AKS"
-        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
-        KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
         pushd aks
         ./provision.sh \
             && oc create secret generic ${CLUSTER_NAME} \
@@ -85,7 +90,6 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
         popd
     elif [[ "$TARGET_KS" == "rosa" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on ROSA"
-        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
         pushd rosa
         ./provision.sh \
             && oc create secret generic ${CLUSTER_NAME} \
@@ -102,14 +106,19 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
         popd
     elif [[ "$TARGET_KS" == "eks" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on EKS"
-        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
-        KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
         pushd eks
+        ./provision.sh \
+            && oc create secret generic ${CLUSTER_NAME} \
+                --from-file=json=${STATE_FILE} \
+                --from-file=kubeconfig=${KUBECONFIG_FILE} \
+                --from-literal=cloud_platform=`cat ${STATE_FILE} | jq -r '.PLATFORM'` \
+                --from-literal=cluster_name=`cat ${STATE_FILE} | jq -r '.CLUSTER_NAME'` \
+                --from-literal=region=`cat ${STATE_FILE} | jq -r '.REGION'`;
+        popd
     elif [[ "$TARGET_KS" == "gke" ]]; then
         echo "#### Provisioning ${CLUSTER_NAME} on GKE"
-        STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
-        KUBECONFIG_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.kubeconfig
         pushd gke
+        echo "Saving KUBECONFIG @ ${KUBECONFIG_FILE}"
         ./provision.sh \
             && oc create secret generic ${CLUSTER_NAME} \
                 --from-file=json=${STATE_FILE} \
@@ -119,6 +128,7 @@ elif [[ "$OPERATION" == "CREATE" ]]; then
                 --from-literal=cloud_platform=`cat ${STATE_FILE} | jq -r '.PLATFORM'`;
         #cm attach cluster --cluster ${CLUSTER_NAME} --cluster-kubeconfig ${KUBECONFIG_FILE}
         popd
+        echo "About to call import-cluster KUBECONFIG @ ${KUBECONFIG_FILE}"
         # Requires ${CLUSTER_NAME} and ${KUBECONFIG_FILE} to be defined
         pushd import-cluster
         ./import.sh

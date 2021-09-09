@@ -52,6 +52,7 @@ rules:
   verbs:
   - create
   - get
+  - delete
 - apiGroups:
   - "agent.open-cluster-management.io"
   resources:

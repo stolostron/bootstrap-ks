@@ -20,14 +20,11 @@ resources:
   # - prereqs.yaml
   - bootstrap-ks.job.yaml
 
-namePrefix: gke-cluster5-
+namePrefix: gke-cluster10-create-
 secretGenerator:
 - name: bootstrap-ks-creds
   env: bootstrap-ks-creds.secret
   files:
   - gcp-credentials.json
-- name: openshift-pull-secret
-  files:
-  - pull-secret.txt
 - name: bootstrap-ks-config
-  env: bootstrap-ks.config.secret
+  env: bootstrap-ks-config.secret

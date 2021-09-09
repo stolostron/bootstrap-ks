@@ -9,9 +9,6 @@ spec:
     spec:
       serviceAccountName: bootstrap-ks-service-account
       volumes:
-      - name: pull-secret
-        secret:
-          secretName: openshift-pull-secret
       - name: ssh-dir
         emptyDir: {}
       - name: tmp
@@ -34,20 +31,15 @@ spec:
         - secretRef:
             name: bootstrap-ks-creds
         env:
-        - name: OCP_PULL_SECRET_FILE
-          value: /opt/pull-secret.txt
         - name: OUTPUT_DEST
           value: /tmp
         - name: COLOR
           value: "false"
         volumeMounts:
-        - name: pull-secret
-          mountPath: "/opt"
-          readOnly: true
         - name: config
-          mountPath: /tmp/.config
+          mountPath: /bootstrap-ks/.config
         - name: gcp-creds
-          mountPath: /tmp/.gcp
+          mountPath: /bootstrap-ks/.gcp
         - name: ssh-dir
           mountPath: /.ssh
         - name: tmp

@@ -8,6 +8,8 @@ oc create namespace ${CLUSTER_NAME}
 sleep 5
 
 echo "Creating auto-import-secret for ${CLUSTER_NAME}..."
+
+# TODO Add error checking to make sure KUBECONFIG_FILE exists/has content
 echo | kubectl apply -f - <<EOF
 kind: Secret
 apiVersion: v1
@@ -63,6 +65,6 @@ spec:
   policyController:
     enabled: true
   searchCollector:
-    enabled: false
+    enabled: true
   version: 2.4.0
 EOF

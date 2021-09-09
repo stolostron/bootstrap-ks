@@ -95,7 +95,7 @@ GKE_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 export KUBECONFIG=${WORKDIR}/${CLUSTER_NAME}.kubeconfig
 printf "${BLUE}Creating an GKE cluster named ${GKE_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}"
+gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}" --machine-type="${GCLOUD_MACHINE_TYPE}"
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision GKE cluster. See error above. Exiting${CLEAR}\n"
     exit 1
@@ -122,7 +122,7 @@ else
   BASE64_OPTION=" "
 fi
 
-kubectl apply -f deploy/cluster-admin-role.yaml &> /dev/null
+kubectl apply -f files/cluster-admin-role.yaml &> /dev/null
 
 # Give cluster time to recognize Service Account & generate token
 sleep 1
