@@ -2,3 +2,7 @@ container-utils/bootstrap-ks.config.secret
 container-utils/bootstrap-ks.job.yaml
 .*
 bin/
+*.secret
+*-credentials.json
+pull-secret.txt
+*.kubeconfig

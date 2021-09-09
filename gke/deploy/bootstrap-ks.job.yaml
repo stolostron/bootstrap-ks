@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  #generateName: bootstrap-ks-provision-
+  name: bootstrap-ks-provision
+  namespace: bootstrap-ks
+spec:
+  template:
+    spec:
+      serviceAccountName: bootstrap-ks-service-account
+      volumes:
+      - name: ssh-dir
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: config
+        emptyDir: {}
+      - name: gcp-creds
+        secret:
+          secretName: bootstrap-ks-creds
+          items:
+          - key: gcp-credentials.json
+            path: osServiceAccount.json
+      containers:
+      - name: bootstrap
+        image: quay.io/gurnbenibm/bootstrapks:latest
+        command: ["/bin/bash", "-c", "./provision_wrapper.sh"]
+        envFrom:
+        - secretRef:
+            name: bootstrap-ks-config
+        - secretRef:
+            name: bootstrap-ks-creds
+        env:
+        - name: OUTPUT_DEST
+          value: /tmp
+        - name: COLOR
+          value: "false"
+        volumeMounts:
+        - name: config
+          mountPath: /bootstrap-ks/.config
+        - name: gcp-creds
+          mountPath: /bootstrap-ks/.gcp
+        - name: ssh-dir
+          mountPath: /.ssh
+        - name: tmp
+          mountPath: /tmp
+      restartPolicy: Never

@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Disable random hash suffix
+generatorOptions:
+  disableNameSuffixHash: true
+
+# namespace to deploy all Resources to
+namespace: bootstrap-ks
+
+# Point to the target job image
+images:
+  - name: quay.io/gurnbenibm/bootstrapks
+    newName: quay.io/mdelder/bootstrapks
+    newTag: latest
+
+# list of Resource Config to be Applied
+resources:
+  # Apply separately to reuse ServiceAccount, Role/Bindings across Job runs
+  # - prereqs.yaml
+  - bootstrap-ks.job.yaml
+
+namePrefix: gke-cluster10-create-
+secretGenerator:
+- name: bootstrap-ks-creds
+  env: bootstrap-ks-creds.secret
+  files:
+  - gcp-credentials.json
+- name: bootstrap-ks-config
+  env: bootstrap-ks-config.secret

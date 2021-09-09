@@ -37,7 +37,6 @@ GCLOUD_CREDS_FILE=${GCLOUD_CREDS_FILE:-"$HOME/.gcp/osServiceAccount.json"}
 GCLOUD_REGION=${GCLOUD_REGION:-"us-east1"}
 GCLOUD_NODE_COUNT=${GCLOUD_NODE_COUNT:-"3"}
 
-
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
 missing=0
@@ -63,13 +62,19 @@ else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
 
-
 #----VERIFY GCLOUD CLI----#
 if [ -z "$(which gcloud)" ]; then
     printf "${RED}Could not find the gcloud cli, exiting.  Try running ./install.sh.${CLEAR}\n"
     exit 1
 fi
 
+export WORKDIR=$(pwd)
+if [ -w ${WORKDIR} ]; then
+  printf "${BLUE}Writing to current directory.${CLEAR}\n"
+else
+  export WORKDIR="/tmp"
+fi
+printf "${BLUE}Writing output files to ${WORKDIR}${CLEAR}\n"
 
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
@@ -77,7 +82,7 @@ printf "${BLUE}Logging in to the gcloud cli.${CLEAR}\n"
 #gcloud auth activate-service-account --key-file ~/.secrets/gc-acm-cicd.json
 gcloud auth activate-service-account --key-file $GCLOUD_CREDS_FILE
 if [ "$?" -ne 0 ]; then
-    printf "${RED}ibmcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
+    printf "${RED}gcloud cli login failed, check credentials. Exiting.${CLEAR}\n"
     exit 1
 fi
 
@@ -87,9 +92,10 @@ gcloud config set project ${GCLOUD_PROJECT_ID}
 
 #----CREATE GKE CLUSTER----#
 GKE_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
+export KUBECONFIG=${WORKDIR}/${CLUSTER_NAME}.kubeconfig
 printf "${BLUE}Creating an GKE cluster named ${GKE_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}"
+gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}" --machine-type="${GCLOUD_MACHINE_TYPE}"
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision GKE cluster. See error above. Exiting${CLEAR}\n"
     exit 1
@@ -100,18 +106,11 @@ printf "${GREEN}Successfully provisioned GKE cluster ${GKE_CLUSTER_NAME}.${CLEAR
 #----EXTRACTING KUBECONFIG----#
 printf "${BLUE}Getting Kubeconfig for the cluster named ${GKE_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-export KUBECONFIG=$PWD/${GKE_CLUSTER_NAME}.kubeconfig
 gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --region="${GCLOUD_REGION}"
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to get credentials for GKE cluster ${GKE_CLUSTER_NAME}, complaining and continuing${CLEAR}\n"
     exit 1
 fi
-unset KUBECONFIG
-
-
-#----Make KUBECONFIG that is useable from anywhere ----#
-export KUBECONFIG_SAVED=$KUBECONFIG
-export KUBECONFIG=$(pwd)/${GKE_CLUSTER_NAME}.kubeconfig
 
 # Check for which base64 command we have available so we can use the right option
 echo | base64 -w 0 > /dev/null 2>&1
@@ -123,75 +122,52 @@ else
   BASE64_OPTION=" "
 fi
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: cluster-admin
-  namespace: kube-system
-EOF
+kubectl apply -f files/cluster-admin-role.yaml &> /dev/null
 
-echo | kubectl apply -f - &> /dev/null <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kube-system-cluster-admin
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-- kind: ServiceAccount
-  name: cluster-admin
-  namespace: kube-system
-EOF
-
+# Give cluster time to recognize Service Account & generate token
 sleep 1
 
-#TMP - DEBUG - TODO
-cp $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.orig
+cp $KUBECONFIG $KUBECONFIG.${GKE_CLUSTER_NAME}
 
-cat > "$(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.portable" <<EOF
+export KUBECONFIG_GKE_CLUSTER_NAME=$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+cat > "$KUBECONFIG.portable" <<EOF
 apiVersion: v1
 clusters:
 - cluster:
     server: $(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
     insecure-skip-tls-verify: true
-  name: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+  name: ${KUBECONFIG_GKE_CLUSTER_NAME}
 contexts:
 - context:
-    cluster: $(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+    cluster: ${KUBECONFIG_GKE_CLUSTER_NAME}
     namespace: default
-    user: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-  name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
-current-context: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+    user: kube-system-cluster-admin/${KUBECONFIG_GKE_CLUSTER_NAME}
+  name: kube-system-cluster-admin/${KUBECONFIG_GKE_CLUSTER_NAME}
+current-context: kube-system-cluster-admin/${KUBECONFIG_GKE_CLUSTER_NAME}
 kind: Config
 preferences: {}
 users:
-- name: kube-system-cluster-admin/$(kubectl config view --minify -o jsonpath='{.clusters[0].name}')
+- name: kube-system-cluster-admin/${KUBECONFIG_GKE_CLUSTER_NAME}
   user:
     token: $(kubectl get $(kubectl get secret -n kube-system -o name | grep cluster-admin-token | head -n 1) -n kube-system -o jsonpath={.data.token} | base64 -d ${BASE64_OPTION})
 EOF
 
-# take portable kubeconfig and replace original kubeconfig
-cp $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.portable $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig
-rm $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.portable
+# # take portable kubeconfig and replace original kubeconfig
+cp $KUBECONFIG.portable $KUBECONFIG
+rm $KUBECONFIG.portable
 
-# Set KUBECONFIG to what it used to be
-export KUBECONFIG=$KUBECONFIG_SAVED
-
-
-printf "${GREEN}You can find your kubeconfig file for this cluster in $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.\n${CLEAR}"
+printf "${GREEN}You can find your kubeconfig file for this cluster in $KUBECONFIG.\n${CLEAR}"
 printf "${CLEAR}"
 
+# the provision_wrapper.sh expects this path to read information
+STATE_FILE=${OUTPUT_DEST}/${CLUSTER_NAME}.json
 
 #-----DUMP STATE FILE----#
-cat > $(pwd)/${GKE_CLUSTER_NAME}.json <<EOF
-{
-    "CLUSTER_NAME": "${GKE_CLUSTER_NAME}",
-    "REGION": "${GCLOUD_REGION}",
-    "PLATFORM": "GCLOUD"
-}
-EOF
+echo "{
+    \"CLUSTER_NAME\": \"${GKE_CLUSTER_NAME}\",
+    \"REGION\": \"${GCLOUD_REGION}\",
+    \"PLATFORM\": \"GCLOUD\"
+}" | tee -a ${STATE_FILE}
+
 printf "${GREEN}GKE cluster provision successful.  Cluster named ${GKE_CLUSTER_NAME} created. \n"
-printf "State file saved for cleanup in $(pwd)/${GKE_CLUSTER_NAME}.json${CLEAR}\n"
+printf "State file saved for cleanup in ${STATE_FILE}${CLEAR}\n"
