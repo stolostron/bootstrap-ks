@@ -81,6 +81,8 @@ gpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/azu
         pip3 install --upgrade pip setuptools
         rm -r /root/.cache
         pip3 install wheel
+        pip3 install cffi --target /usr/lib64/az/lib/python3.6/site-packages/
+        pip3 install azure-cli-core
         pip3 install --upgrade  azure-cli --no-cache-dir
     else
         # Unknown distro
