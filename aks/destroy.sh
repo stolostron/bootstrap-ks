@@ -22,32 +22,43 @@ RESOURCE_NAME=$(cat $1 | jq -r '.RESOURCE_NAME')
 RESOURCE_GROUP_NAME=$(cat $1 | jq -r '.RESOURCE_GROUP_NAME')
 SUBSCRIPTION=$(cat $1 | jq -r '.SUBSCRIPTION')
 
-
-#----VALIDATE ENV VARS----#
-# Validate that we have all required env vars and exit with a failure if any are missing
-missing=0
-
-if [ -z "$AZURE_PASS" ]; then
-    printf "${RED}AZURE_PASS env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
-
-if [ -z "$AZURE_USER" ]; then
-    printf "${RED}AZURE_USER env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
-
-if [ "$missing" -ne 0 ]; then
-    exit $missing
-fi
-
+# Default to disable the service principal login
+SERVICE_PRINCIPAL=${SERVICE_PRINCIPAL:-"false"}
 
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
-az login -u $AZURE_USER -p $AZURE_PASS &> /dev/null
-if [ "$?" -ne 0 ]; then
-    printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
-    exit 1
+if [ $SERVICE_PRINCIPAL == "true" ]; then
+    if [ -z "$CLIENT_ID" ]; then
+        printf "${RED}CLIENT_ID env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$CLIENT_SECRET" ]; then
+        printf "${RED}CLIENT_SECRET env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$TENANT_ID" ]; then
+        printf "${RED}TENANT_ID env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi    
+    az login --service-principal -u "$CLIENT_ID" -p "$CLIENT_SECRET" -t "$TENANT_ID" > /dev/null
+    if [ "$?" -ne 0 ]; then
+        printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
+        exit 1
+    fi
+else
+    if [ -z "$AZURE_PASS" ]; then
+        printf "${RED}AZURE_PASS env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$AZURE_USER" ]; then
+        printf "${RED}AZURE_USER env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    az login -u "$AZURE_USER" -p "$AZURE_PASS" > /dev/null
+    if [ "$?" -ne 0 ]; then
+        printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
+        exit 1
+    fi
 fi
 
 if [ ! -z "$SUBSCRIPTION" ]; then
