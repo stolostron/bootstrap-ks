@@ -28,20 +28,11 @@ RESOURCE_NAME="$SHORTNAME-$RANDOM_IDENTIFIER"
 # Default to eastus
 AZURE_REGION=${AZURE_REGION:-"eastus"}
 
+# Default to disable the service principal login
+SERVICE_PRINCIPAL=${SERVICE_PRINCIPAL:-"false"}
+
 
 #----VALIDATE ENV VARS----#
-# Validate that we have all required env vars and exit with a failure if any are missing
-missing=0
-
-if [ -z "$AZURE_PASS" ]; then
-    printf "${RED}AZURE_PASS env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
-
-if [ -z "$AZURE_USER" ]; then
-    printf "${RED}AZURE_USER env var not set. flagging for exit.${CLEAR}\n"
-    missing=1
-fi
 
 if [ ! -z "$CLUSTER_NAME" ]; then
     RESOURCE_NAME="$CLUSTER_NAME-$RANDOM_IDENTIFIER"
@@ -50,17 +41,41 @@ else
     printf "${BLUE}Using $RESOURCE_NAME to identify all created resources.${CLEAR}\n"
 fi
 
-if [ "$missing" -ne 0 ]; then
-    exit $missing
-fi
-
-
 #----LOG IN----#
 # Log in and optionally choose a specific subscription
-az login -u "$AZURE_USER" -p "$AZURE_PASS" &> /dev/null
-if [ "$?" -ne 0 ]; then
-    printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
-    exit 1
+printf "${YELLOW}"
+if [ $SERVICE_PRINCIPAL == "true" ]; then
+    if [ -z "$CLIENT_ID" ]; then
+        printf "${RED}CLIENT_ID env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$CLIENT_SECRET" ]; then
+        printf "${RED}CLIENT_SECRET env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$TENANT_ID" ]; then
+        printf "${RED}TENANT_ID env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi    
+    az login --service-principal -u "$CLIENT_ID" -p "$CLIENT_SECRET" -t "$TENANT_ID" > /dev/null
+    if [ "$?" -ne 0 ]; then
+        printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
+        exit 1
+    fi
+else
+    if [ -z "$AZURE_PASS" ]; then
+        printf "${RED}AZURE_PASS env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    if [ -z "$AZURE_USER" ]; then
+        printf "${RED}AZURE_USER env var not set. flagging for exit.${CLEAR}\n"
+        exit 1
+    fi
+    az login -u "$AZURE_USER" -p "$AZURE_PASS" > /dev/null
+    if [ "$?" -ne 0 ]; then
+        printf "${RED}Azure login failed, check credentials. Exiting.${CLEAR}\n"
+        exit 1
+    fi
 fi
 
 if [ ! -z "$AZURE_SUBSCRIPTION_ID" ]; then
