@@ -30,5 +30,11 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 2. run `./provision.sh`
 3. if successful, you will see a `.json` file with metadata for your cluster!
 
+Want to extend a cluster's lifetime beyond the default 1 day?
+```
+ocm edit cluster --expiration 167h --cluster {cluster-name}
+```
+`167h` is the maximum time, one week.
+
 ### Cleaning up a cluster
 1. run `./destroy.sh <.json file of your cluster metadata>`
