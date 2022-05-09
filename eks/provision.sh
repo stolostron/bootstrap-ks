@@ -64,9 +64,9 @@ EKS_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an EKS cluster named ${EKS_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
 
-OPTIONAL_PARAMS=""
+OPTIONAL_PARAMS=${OPTIONAL_PARAMS:-""}
 if [ ! -z "$EKS_ZONES" ]; then
-  OPTIONAL_PARAMS=$"${OPTIONAL_PARAMS} --zones ${EKS_ZONES} "
+  OPTIONAL_PARAMS="${OPTIONAL_PARAMS} --zones ${EKS_ZONES} "
 fi
 
 eksctl create cluster --name "${EKS_CLUSTER_NAME}" --nodes "${EKS_NODE_COUNT}" --region "${EKS_REGION}" --kubeconfig "$(pwd)/${EKS_CLUSTER_NAME}.kubeconfig" ${OPTIONAL_PARAMS}
