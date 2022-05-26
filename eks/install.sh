@@ -29,6 +29,9 @@ if [[ "$OS" == "darwin" ]]; then
         echo "kubectl version: " `kubectl version --client`
      fi
 
+    if [ -z "$(which aws-iam-authenticator)" ]; then
+        brew install aws-iam-authenticator
+    fi
 else
     if [ -z "$(which jq)" ]; then
         sudo yum install -y jq
@@ -40,16 +43,17 @@ else
       printf "${GREEN}ekscli installed with the following version:\n$(eksctl version)${CLEAR}\n"
     fi
 
-    if [ -z "$(which oc)" ]; then
-      curl -L https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz | tar -zx
-      printf "${GREEN}oc installed with the following version:\n$(oc version)${CLEAR}\n"
-    fi
-
     if [ -z "$(which kubectl)" ]; then
       curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl
       chmod +x ./kubectl
       sudo mv ./kubectl /usr/local/bin/kubectl
       printf "${GREEN}kubectl installed with the following version:\n$(kubectl version)${CLEAR}\n"
+    fi
+
+    if [ -z "$(which aws-iam-authenticator)" ]; then
+        curl --silent -o aws-iam-authenticator https://s3.us-west-2.amazonaws.com/amazon-eks/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+        sudo chmod +x ./aws-iam-authenticator
+        sudo mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     fi
 
 fi
