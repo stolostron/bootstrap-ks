@@ -18,6 +18,8 @@ export CLUSTER_NAME=<some cluster name> # if you set a cluster name, we will use
 
 export GCLOUD_NODE_COUNT=<desired node count>
 export GCLOUD_REGION=<desired region>         # defaults to us-east1
+export GCLOUD_CLUSTER_VERSION
+export GCLOUD_CLUSTER_CHANNEL                 # defaults to use regular channel
 ```
 
 2. run `./provision.sh`

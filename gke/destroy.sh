@@ -16,6 +16,9 @@ if [ ! -f "$1" ]; then
     printf "$1 does not exist, exiting\n"
     exit 1
 fi
+
+GCLOUD_CREDS_FILE=${GCLOUD_CREDS_FILE:-"$HOME/.gcp/osServiceAccount.json"}
+
 CLUSTER_NAME=$(cat $1 | jq -r '.CLUSTER_NAME')
 REGION=$(cat $1 | jq -r '.REGION')
 
