@@ -30,7 +30,8 @@ NAME_SUFFIX="gcp"
 GCLOUD_CREDS_FILE=${GCLOUD_CREDS_FILE:-"$HOME/.gcp/osServiceAccount.json"}
 GCLOUD_REGION=${GCLOUD_REGION:-"us-east1"}
 GCLOUD_NODE_COUNT=${GCLOUD_NODE_COUNT:-"3"}
-
+GCLOUD_CLUSTER_CHANNEL=${GCLOUD_CLUSTER_CHANNEL:-"regular"}
+GCLOUD_CLUSTER_VERSION=${GCLOUD_CLUSTER_VERSION:-""}
 
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
@@ -80,10 +81,28 @@ gcloud config set project ${GCLOUD_PROJECT_ID}
 
 
 #----CREATE GKE CLUSTER----#
+# Check the cluster version before create the clusters
+if [ ! -z "${GCLOUD_CLUSTER_VERSION}" ] && [ "${GCLOUD_CLUSTER_VERSION}" != "" ]; then
+    printf "${BLUE}Verify the customized cluster version ${GCLOUD_CLUSTER_VERSION} in channel ${GCLOUD_CLUSTER_CHANNEL} in region ${GCLOUD_REGION}.${CLEAR}\n"
+    printf "${YELLOW}"
+    valid_cluster_version=$(gcloud container get-server-config --flatten="channels" --region=${GCLOUD_REGION} --format="json(channels.validVersions)" --filter="channels.channel=${GCLOUD_CLUSTER_CHANNEL}"  | jq -r .[].channels.validVersions[])
+    if [[ "${valid_cluster_version[@]}" =~ "${GCLOUD_CLUSTER_VERSION}" ]]; then
+        printf "${BLUE}Success found the GKE cluster version with ${GCLOUD_CLUSTER_VERSION} in channel ${GCLOUD_CLUSTER_CHANNEL} in region ${GCLOUD_REGION}.${CLEAR}\n"
+        printf "${YELLOW}"
+    else
+        printf "${RED}Could not find GKE cluster version with ${GCLOUD_CLUSTER_VERSION} in channel ${GCLOUD_CLUSTER_CHANNEL} in region ${GCLOUD_REGION}.${CLEAR}\n"
+        exit 1
+    fi
+else
+    printf "${BLUE}Get the default cluster version from channel ${GCLOUD_CLUSTER_CHANNEL} in region ${GCLOUD_REGION}.${CLEAR}\n"
+    printf "${YELLOW}"
+    GCLOUD_CLUSTER_VERSION=$(gcloud container get-server-config --flatten="channels" --region=${GCLOUD_REGION} --format="json(channels.defaultVersion)" --filter="channels.channel=${GCLOUD_CLUSTER_CHANNEL}" | jq .[].channels.defaultVersion -r)
+fi
+
 GKE_CLUSTER_NAME="${RESOURCE_NAME}-${NAME_SUFFIX}"
 printf "${BLUE}Creating an GKE cluster named ${GKE_CLUSTER_NAME}.${CLEAR}\n"
 printf "${YELLOW}"
-gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}"
+gcloud container clusters create ${GKE_CLUSTER_NAME} --num-nodes=${GCLOUD_NODE_COUNT} --region="${GCLOUD_REGION}" --release-channel="${GCLOUD_CLUSTER_CHANNEL}" --cluster-version="${GCLOUD_CLUSTER_VERSION}"
 if [ "$?" -ne 0 ]; then
     printf "${RED}Failed to provision GKE cluster. See error above. Exiting${CLEAR}\n"
     exit 1
