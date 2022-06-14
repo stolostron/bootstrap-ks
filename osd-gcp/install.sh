@@ -41,9 +41,9 @@ else
       curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.20.0/bin/linux/amd64/kubectl
       chmod +x ./kubectl
       sudo mv ./kubectl /usr/local/bin/kubectl
-      printf "${GREEN}kubectl installed with the following version:\n$(kubectl version)${CLEAR}\n"
+      printf "${GREEN}kubectl installed with the following version:\n$(kubectl version --client)${CLEAR}\n"
     else
-      printf "${GREEN}kubectl version `kubectl version` already installed ${CLEAR}\n"
+      printf "${GREEN}kubectl version `kubectl version --client` already installed ${CLEAR}\n"
     fi
 
     if [ -z "$(which ocm)" ]; then
