@@ -161,6 +161,20 @@ EOF
 
 sleep 1
 
+if [ $(kubectl get secret cluster-admin-token -n kube-system --ignore-not-found --no-headers | wc -l | sed 's/\ //g' ) == 0 ]; then
+  # Starting with 1.24, K8s won't generate Secrets any longer automatically for ServiceAccounts.
+  echo | kubectl apply -f - &> /dev/null <<EOF
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: cluster-admin-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: "cluster-admin"
+EOF
+fi
+
 #TMP - DEBUG - TODO
 cp $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig $(pwd)/${GKE_CLUSTER_NAME}.kubeconfig.orig
 
