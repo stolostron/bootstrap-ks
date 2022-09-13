@@ -156,8 +156,22 @@ ${ROSA} create cluster \
     --yes
 printf "${CLEAR}"
 
-
 #-----EXTRACT DETAILS-----#
+# The API url may not ready in the cluster info , need a for loop here to wait for the API URL ready
+TIMEOUT=${TIMEOUT:-"600"}
+printf "${BLUE}Polling for $TIMEOUT seconds for the ${RESOURCE_NAME} cluster to be ready.${CLEAR}\n"
+acc=0
+while ! (${ROSA} describe cluster --cluster=${RESOURCE_NAME} -o json | jq -er .api.url)
+do
+    printf "${YELLOW}Waiting for cluster ${RESOURCE_NAME} API address ready...${CLEAR}\n"
+    sleep 5
+    acc=$((acc+5))
+    if [ "$acc" -ge "$TIMEOUT" ]; then
+        printf "${RED} The cluster ${RESOURCE_NAME} API was not ready in $TIMEOUT seconds, exits."
+        exit 1
+    fi
+done
+
 api_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "API URL:" | sed -n "s/API URL:[ ]*\(.*\)/\1/p")
 console_url=$(${ROSA} describe cluster --cluster=${RESOURCE_NAME} | grep "Console URL:" | sed -n "s/Console URL:[ ]*\(.*\)/\1/p")
 # Update account ID logged earlier to match that of the cluster (just in case)
