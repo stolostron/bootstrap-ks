@@ -51,7 +51,7 @@ else
     fi
 
     if [ -z "$(which aws-iam-authenticator)" ]; then
-        curl --silent -o aws-iam-authenticator https://s3.us-west-2.amazonaws.com/amazon-eks/1.21.2/2021-07-05/bin/linux/amd64/aws-iam-authenticator
+        curl --silent -Lo aws-iam-authenticator https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64
         sudo chmod +x ./aws-iam-authenticator
         sudo mv ./aws-iam-authenticator /usr/local/bin/aws-iam-authenticator
     fi
