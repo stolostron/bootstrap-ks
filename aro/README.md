@@ -33,6 +33,10 @@ export CLUSTER_NAME=<some cluster name>
 # if CLUSTER_NAME is not specified, we will use the first 8 characters of the system's username
 
 export AZURE_REGION=<region>  # defaults to eastus
+
+export CLUSTER_VERSION=<cluster version>
+# To get the range of supported versions: az aro get-versions --location <region>
+# If defined, will use the version, otherwise will use the latest available version
 ```
 
 2. run `./provision.sh`
