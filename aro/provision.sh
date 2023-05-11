@@ -147,6 +147,23 @@ az account show
 printf "${CLEAR}"
 
 
+#----Set optional params----#
+OPTIONAL_PARAMS=""
+#----Set cluster version if defined----#
+if [ ! -z "$CLUSTER_VERSION" ]; then
+    vers=$(az aro get-versions --location "$AZURE_REGION" -o tsv)
+    if echo "$vers" | grep -q "$CLUSTER_VERSION"; then
+        printf "${BLUE}Using $CLUSTER_VERSION as cluster version.${CLEAR}\n"
+        OPTIONAL_PARAMS=$"${OPTIONAL_PARAMS} --version ${CLUSTER_VERSION} "
+    else
+        printf "${RED}Given cluster version is not supported - $CLUSTER_VERSION.${CLEAR}\n"
+        printf "${RED}The following versions supported by ARO:${CLEAR}\n"
+        printf "${RED}$vers${CLEAR}\n"
+        exit 1
+    fi
+fi
+
+
 #----REGISTER RESOURCE PROVIDERS----#
 printf "${BLUE}Enabling the Microsoft.RedHatOpenShift Resource Provider.${CLEAR}\n"
 az provider register -n Microsoft.RedHatOpenShift --wait
@@ -276,7 +293,7 @@ az aro create \
     --worker-count "$AZURE_WORKER_COUNT" \
     --worker-vm-disk-size-gb "$AZURE_WORKER_DISK_SIZE" \
     --domain=${RESOURCE_NAME}.${AZURE_BASE_DOMAIN} \
-    --pull-secret @${OCP_PULL_SECRET_FILE};
+    --pull-secret @${OCP_PULL_SECRET_FILE} ${OPTIONAL_PARAMS};
 printf "${CLEAR}"
 
 
