@@ -62,6 +62,8 @@ AWS_WORKER_COUNT=${AWS_WORKER_COUNT:-"3"}
 # Default to "stable"
 CHANNEL_GROUP=${CHANNEL_GROUP:-"stable"}
 
+# Default to empty
+OPTIONAL_PARAMS=${OPTIONAL_PARAMS:-""}
 
 #----VALIDATE ENV VARS----#
 # Validate that we have all required env vars and exit with a failure if any are missing
@@ -151,7 +153,7 @@ ${ROSA} create cluster \
     --compute-machine-type=${AWS_WORKER_TYPE} \
     --compute-nodes=${AWS_WORKER_COUNT} \
     --channel-group=${CHANNEL_GROUP} \
-    --multi-az \
+    --multi-az ${OPTIONAL_PARAMS} \
     --watch \
     --yes
 printf "${CLEAR}"
